@@ -59,6 +59,14 @@ class TestMathParse(unittest.TestCase):
             }
         )
 
+        f = "def func(zed, wisk): return wisk - sqrt(zed / 10) * 99"
+        self.assertEqual(mathparse.mathparse_string(f), {
+                "_func": "([_func_arg_wisk] - (sqrt(([_func_arg_zed] / 10)) * 99))",
+                "_func_arg_zed": "zed",
+                "_func_arg_wisk": "wisk",
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 

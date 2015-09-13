@@ -29,6 +29,10 @@ def expr(stmt, args):
         return '+'
     elif isinstance(stmt, ast.Mult):
         return '*'
+    elif isinstance(stmt, ast.Sub):
+        return '-'
+    elif isinstance(stmt, ast.Div):
+        return '/'
     elif isinstance(stmt, ast.Call):
         return "{}({})".format(expr(stmt.func, args), ','.join(map(lambda x: expr(x, args), stmt.args)))
     else:
