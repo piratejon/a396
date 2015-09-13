@@ -83,11 +83,27 @@ def f1(z):
 def f2(y):
     return cos(-y*9)/33
 """
-        self.assertDictEqual(mathparse.mathparse_string(f), {
+        self.assertEqual(mathparse.mathparse_string(f), {
                 "_f1": "(sin(([_f1_arg_z] * 9)) / 33)",
                 "_f1_arg_z": "z",
                 "_f2": "(cos(((- [_f2_arg_y]) * 9)) / 33)",
                 "_f2_arg_y": "y",
+            }
+        )
+
+    def test_reuses_a_function(self):
+        f = """
+def f1():
+    return 33
+
+def f2(z):
+    return z + f1()
+"""
+
+        self.assertEqual(mathparse.mathparse_string(f), {
+                "_f1": 33,
+                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
+                "_f2_arg_z": "z",
             }
         )
 
