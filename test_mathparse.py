@@ -51,6 +51,14 @@ class TestMathParse(unittest.TestCase):
             }
         )
 
+    def test_ex_expressions(self):
+        f = "def func(z): return sqrt(z)"
+        self.assertEqual(mathparse.mathparse_string(f), {
+                "_func": "sqrt([_func_arg_z])",
+                "_func_arg_z": "z",
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 

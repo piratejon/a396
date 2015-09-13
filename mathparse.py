@@ -15,10 +15,8 @@ def fetch_args(args):
 def make_arg_formulae(name, args):
     return { arg: "{}_arg_{}".format(name, arg) for arg in args }
 
-def process_statement(stmt, args):
-    if isinstance(stmt, ast.Return):
-        return process_statement(stmt.value, args)
-    elif isinstance(stmt, ast.Num):
+def expr(stmt, args):
+    if isinstance(stmt, ast.Num):
         return stmt.n
     elif isinstance(stmt, ast.Name):
         if stmt.id in args:
@@ -26,11 +24,13 @@ def process_statement(stmt, args):
         else:
             return stmt.id
     elif isinstance(stmt, ast.BinOp):
-        return "({} {} {})".format(process_statement(stmt.left, args), process_statement(stmt.op, args), process_statement(stmt.right, args))
+        return "({} {} {})".format(expr(stmt.left, args), expr(stmt.op, args), expr(stmt.right, args))
     elif isinstance(stmt, ast.Add):
         return '+'
     elif isinstance(stmt, ast.Mult):
         return '*'
+    elif isinstance(stmt, ast.Call):
+        return "{}({})".format(expr(stmt.func, args), ','.join(map(lambda x: expr(x, args), stmt.args)))
     else:
         print(stmt, stmt._fields)
         return "unrecognized statement type"
@@ -56,7 +56,7 @@ def mathparse(tree):
     name = '_{}'.format(func.name)
     formulae = make_arg_formulae(name, fetch_args(func.args.args))
     last_statement = func.body[-1]
-    result = {name: process_statement(last_statement, formulae)}
+    result = {name: expr(last_statement.value, formulae)}
 
 # let the expression names be the keys
     result.update({formulae[k]: k for k in formulae})
