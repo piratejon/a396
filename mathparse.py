@@ -29,6 +29,8 @@ def process_statement(stmt, args):
         return "({} {} {})".format(process_statement(stmt.left, args), process_statement(stmt.op, args), process_statement(stmt.right, args))
     elif isinstance(stmt, ast.Add):
         return '+'
+    elif isinstance(stmt, ast.Mult):
+        return '*'
     else:
         print(stmt, stmt._fields)
         return "unrecognized statement type"
