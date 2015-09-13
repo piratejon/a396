@@ -42,6 +42,15 @@ class TestMathParse(unittest.TestCase):
             }
         )
 
+    def test_ex_multiple_params(self):
+        f = "def ex_add(a, b): return a + b"
+        self.assertEqual(mathparse.mathparse_string(f), {
+                "_ex_add": "([_ex_add_arg_a] + [_ex_add_arg_b])",
+                "_ex_add_arg_a": "a",
+                "_ex_add_arg_b": "b",
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
