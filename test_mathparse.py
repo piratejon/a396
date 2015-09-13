@@ -75,6 +75,22 @@ class TestMathParse(unittest.TestCase):
             }
         )
 
+    def test_translates_two_functions(self):
+        f = """
+def f1(z):
+    return sin(z*9)/33
+
+def f2(y):
+    return cos(-y*9)/33
+"""
+        self.assertDictEqual(mathparse.mathparse_string(f), {
+                "_f1": "(sin(([_f1_arg_z] * 9)) / 33)",
+                "_f1_arg_z": "z",
+                "_f2": "(cos(((- [_f2_arg_y]) * 9)) / 33)",
+                "_f2_arg_y": "y",
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 

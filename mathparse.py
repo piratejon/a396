@@ -25,6 +25,8 @@ def expr(stmt, args):
             return stmt.id
     elif isinstance(stmt, ast.BinOp):
         return "({} {} {})".format(expr(stmt.left, args), expr(stmt.op, args), expr(stmt.right, args))
+    elif isinstance(stmt, ast.UnaryOp):
+        return "({} {})".format(expr(stmt.op, args), expr(stmt.operand, args))
     elif isinstance(stmt, ast.Add):
         return '+'
     elif isinstance(stmt, ast.Mult):
@@ -33,10 +35,12 @@ def expr(stmt, args):
         return '-'
     elif isinstance(stmt, ast.Div):
         return '/'
+    elif isinstance(stmt, ast.USub):
+        return '-'
     elif isinstance(stmt, ast.Call):
         return "{}({})".format(expr(stmt.func, args), ','.join(map(lambda x: expr(x, args), stmt.args)))
     else:
-        print(stmt, stmt._fields)
+        print("UNRECOGNIZED:", stmt, stmt._fields)
         return "unrecognized statement type"
 
 def mathparse(tree):
@@ -56,14 +60,15 @@ def mathparse(tree):
 #     <_ast.Name object at 0x7fd768a26470>
 #       <_ast.Load object at 0x7fd768a19d68>
 
-    func = tree.body[0]
-    name = '_{}'.format(func.name)
-    formulae = make_arg_formulae(name, fetch_args(func.args.args))
-    last_statement = func.body[-1]
-    result = {name: expr(last_statement.value, formulae)}
-
-# let the expression names be the keys
-    result.update({formulae[k]: k for k in formulae})
+    result = {}
+    for i in range(len(tree.body)):
+        func = tree.body[i]
+        name = '_{}'.format(func.name)
+        formulae = make_arg_formulae(name, fetch_args(func.args.args))
+        last_statement = func.body[-1]
+        result.update({name: expr(last_statement.value, formulae)})
+        # let the expression names be the keys
+        result.update({formulae[k]: k for k in formulae})
     return result
 
 def mathparse_string(mathstr):
