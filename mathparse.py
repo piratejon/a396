@@ -11,6 +11,7 @@ def fetch_args(args):
             kept_args.append(arg.arg)
     return kept_args
 
+# this lets us look up variable terms to get the expression name
 def make_arg_formulae(name, args):
     return { arg: "{}_arg_{}".format(name, arg) for arg in args }
 
@@ -24,7 +25,12 @@ def process_statement(stmt, args):
             return "[{}]".format(args[stmt.id])
         else:
             return stmt.id
+    elif isinstance(stmt, ast.BinOp):
+        return "({} {} {})".format(process_statement(stmt.left, args), process_statement(stmt.op, args), process_statement(stmt.right, args))
+    elif isinstance(stmt, ast.Add):
+        return '+'
     else:
+        print(stmt, stmt._fields)
         return "unrecognized statement type"
 
 def mathparse(tree):
@@ -49,6 +55,8 @@ def mathparse(tree):
     formulae = make_arg_formulae(name, fetch_args(func.args.args))
     last_statement = func.body[-1]
     result = {name: process_statement(last_statement, formulae)}
+
+# let the expression names be the keys
     result.update({formulae[k]: k for k in formulae})
     return result
 
