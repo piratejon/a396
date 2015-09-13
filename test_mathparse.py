@@ -99,11 +99,27 @@ def f1():
 def f2(z):
     return z + f1()
 """
-
         self.assertEqual(mathparse.mathparse_string(f), {
                 "_f1": 33,
                 "_f2": "([_f2_arg_z] + [_f1_for_f2])",
                 "_f2_arg_z": "z",
+            }
+        )
+
+        f = """
+def f1(z):
+    return 33 + z
+
+def f2(z):
+    return z + f1()
+"""
+        self.assertEqual(mathparse.mathparse_string(f), {
+                "_f1": "(33 + [_f1_arg_z])",
+                "_f1_arg_z": "z",
+                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
+                "_f2_arg_z": "z",
+                "_f1_for_f2": "(33 + [_f1_for_f2_arg_z])",
+                "_f1_for_f2_arg_z": "z"
             }
         )
 
