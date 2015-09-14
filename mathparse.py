@@ -27,21 +27,17 @@ def build_func_table(body):
     """build lookup of top-level functions defined in this statement list"""
     return {body[i].name: body[i] for i in range(len(body))}
 
+def clone_function_as(func, name):
+    """creates a deep copy of an ast.Function for duplicating where required by a new use"""
+    func = copy.deepcopy(func)
+    func.name = '{}_for_{}'.format(func.name, name)
+    return func
 
 class MathParse:
     """MathParse turns Python code into Tableau expressions"""
 
     def __init__(self):
         pass
-
-    def clone_function_as(self, func, new_name, real_funcs):
-        """creates a deep copy of an ast.Function for duplicating where required by a new use"""
-        func = copy.deepcopy(func)
-        func.name = '{}_for_{}'.format(func.name, new_name)
-        return {
-            'name': func.name,
-            'funcs': self.translate_single_function(func, real_funcs)
-        }
 
     def expr(self, name, args, stmt, real_funcs):
         """recursively translates the elements of the passed AST"""
@@ -89,10 +85,14 @@ class MathParse:
             return '-'
 
         elif isinstance(stmt, ast.Call):
-            return "{}({})".format(
-                self.expr(name, args, stmt.func, real_funcs),
-                ','.join([self.expr(name, args, arg, real_funcs) for arg in stmt.args]))
-#map(lambda x: self.expr(name, args, x, real_funcs), stmt.args)))
+            if stmt.func.id in real_funcs:
+                new_function = clone_function_as(real_funcs[stmt.func.id], name)
+                self.func_build_set.add(new_function)
+                return '[_{}]'.format(new_function.name)
+            else:
+                return "{}({})".format(
+                    self.expr(name, args, stmt.func, real_funcs),
+                    ','.join([self.expr(name, args, arg, real_funcs) for arg in stmt.args]))
 
         else:
             return "UNRECOGNIZED {} {}".format(stmt, ''.join(stmt._fields))
@@ -112,8 +112,10 @@ class MathParse:
         """kick off the parsing of the AST"""
         formulae = {}
         real_functions = build_func_table(tree.body)
-        for i in range(len(tree.body)):
-            new_formula = self.translate_single_function(tree.body[i], real_functions)
+        self.func_build_set = {tree.body[i] for i in range(len(tree.body))}
+        while self.func_build_set:
+            func = self.func_build_set.pop()
+            new_formula = self.translate_single_function(func, real_functions)
             formulae.update(new_formula)
         return formulae
 
