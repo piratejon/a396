@@ -112,9 +112,9 @@ def f2(z):
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
                 "_f1": 33,
-                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
+                "_f2": "([_f2_arg_z] + [_f1_l6_c15])",
                 "_f2_arg_z": "z",
-                "_f1_for_f2": 33
+                "_f1_l6_c15": 33
             }
         )
 
@@ -129,10 +129,24 @@ def f2(z):
         self.assertEqual(mp.mathparse_string(f), {
                 "_f1": "(33 + [_f1_arg_z])",
                 "_f1_arg_z": "z",
-                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
+                "_f2": "([_f2_arg_z] + [_f1_l6_c15])",
                 "_f2_arg_z": "z",
-                "_f1_for_f2": "(33 + [_f1_for_f2_arg_z])",
-                "_f1_for_f2_arg_z": "z"
+                "_f1_l6_c15": "(33 + [_f1_l6_c15_arg_z])",
+                "_f1_l6_c15_arg_z": "z"
+            }
+        )
+
+    def test_pushes_a_statement_down(self):
+        f = """
+def f1(z):
+    x = 19*z
+    return sqrt(x)
+"""
+        mp = mathparse.MathParse()
+        self.assertEqual(mp.mathparse_string(f), {
+                "_f1_arg_z": "z",
+                "_f1_l3_c4_x": "(19 * [_f1_arg_z])",
+                "_f1": "sqrt([_f1_l3_c4_x])"
             }
         )
 
