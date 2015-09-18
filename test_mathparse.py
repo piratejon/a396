@@ -136,7 +136,7 @@ def f2(z):
             }
         )
 
-    def test_pushes_a_statement_down(self):
+    def test_objectifies_an_ast(self):
         f = """
 def f1(z):
     x = 19*z
@@ -208,6 +208,99 @@ def f1(z):
                                                                 "ctx": {
                                                                     "Load": {},
                                                                 }, "id": "x"
+                                                            }
+                                                        }
+                                                    ], "starargs": None,
+                                                    "keywords": [],
+                                                    "func": {
+                                                        "Name": {
+                                                            "ctx": {
+                                                                "Load": {}
+                                                            }, "id": "sqrt"
+                                                        }
+                                                    },
+                                                    "kwargs": None
+                                                }
+                                            }
+                                        }
+                                    }
+                                ], "decorator_list": [],
+                                "returns": None
+                            }
+                        }
+                    ]
+                }
+            }
+        )
+
+    def test_pushes_a_statement_down(self):
+        """
+          This test illustrates the transformation from
+
+              def f1(z):
+                  x = 19*z
+                  return sqrt(x)
+
+          to
+
+              def f1(z):
+                  return sqrt(19*z)
+          """
+
+        f = """
+def f1(z):
+    x = 19*z
+    return sqrt(x)
+"""
+        self.maxDiff = None
+        mp = mathparse.MathParse()
+        self.assertEqual(
+          mp.push_it_down(
+            mp.abstractify_string(f)
+          ), {
+                "Module": {
+                    "body": [
+                        {
+                            "FunctionDef": {
+                                "name": "f1",
+                                "args": {
+                                    "arguments": {
+                                        "defaults": [],
+                                        "args": [
+                                            {
+                                                "arg": {
+                                                    "annotation": None,
+                                                    "arg": "z"
+                                                }
+                                            }
+                                        ], "kwarg": None,
+                                        "vararg": None,
+                                        "kw_defaults": [],
+                                        "kwonlyargs": []
+                                    }
+                                }, "body": [
+                                    {
+                                        "Return": {
+                                            "value": {
+                                                "Call": {
+                                                    "args": [
+                                                        {
+                                                            "BinOp": {
+                                                                "left": {
+                                                                    "Num": {
+                                                                        "n": 19
+                                                                    }
+                                                                },
+                                                                "op": {
+                                                                    "Mult": {}
+                                                                },
+                                                                "right": {
+                                                                    "Name": {
+                                                                        "ctx": {
+                                                                            "Load": {}
+                                                                        }, "id": "z"
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     ], "starargs": None,

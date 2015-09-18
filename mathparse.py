@@ -174,6 +174,9 @@ class MathParse:
         return formulae
 
     def objectify_node(self, node):
+        """Get the tree into a friendly manipulable format we can easily
+          compare in unit tests and does not have line/col info not needed
+          here"""
         if node == None:
             return None
         elif isinstance(node, int) or isinstance(node, str):
@@ -190,8 +193,19 @@ class MathParse:
                 }
             }
 
+    def push_it_down(self, orig_tree):
+        tree = copy.deepcopy(orig_tree)
+        symbol = tree['Module']['body'][0]['FunctionDef']['body'][0]['Assign']['targets'][0]['Name']['id']
+        value = tree['Module']['body'][0]['FunctionDef']['body'][0]['Assign']['value']
+        tree['Module']['body'][0]['FunctionDef']['body'][1]['Return']['value']['Call']['args'][0] = value
+        del tree['Module']['body'][0]['FunctionDef']['body'][0]
+        return tree
+ 
+    def abstractify_tree(self, tree):
+        return self.objectify_node(tree)
+
     def abstractify_string(self, mathstr):
-        return self.objectify_node(ast.parse(mathstr))
+        return self.abstractify_tree(ast.parse(mathstr))
 
     def mathparse_string(self, mathstr):
         """wrapper to parse Python code in a string"""
