@@ -147,30 +147,18 @@ class MathParse:
         """create the expression object entry and fill it with the expanded,
         translated expression body"""
         func_name = make_function_name(func)
-        args = build_arg_lookup(func_name, fetch_args(func.args.args))
-
-        new_formula = {}
-        local_values = {}
+        arg_names = build_arg_lookup(func_name, fetch_args(func.args.args))
+        new_formulae = {} # this is the output
+        local_names = {} # maps 'x' onto '_f_lX_cY_x'
+        local_values = {} # maps '_f_lX_cY_x' onto "translated string"
 
         for stmt in func.body:
-            stmt_value = self.expr(stmt.value, args, real_functions)
-            if isinstance(stmt, ast.Assign):
-                stmt_name = make_arg_local_name(
-                    func_name,
-                    stmt.targets[0].id,
-                    'l{}_c{}'.format(
-                        stmt.lineno, stmt.col_offset
-                    )
-                )
-                args[stmt.targets[0].id] = stmt_name
-                local_values[stmt_name] = stmt_value
-                new_formula.update({stmt_name: stmt_value})
-            else:
-                new_formula.update({func_name: stmt_value})
+            stmt_value = self.expr(stmt.value, arg_names, real_functions)
+            new_formulae.update({func_name: stmt_value})
 
-        new_formula.update({args[k]: k for k in args})
-        new_formula.update(local_values)
-        return new_formula
+        new_formulae.update({arg_names[k]: k for k in arg_names})
+        new_formulae.update(local_values)
+        return new_formulae
 
     def mathparse(self, tree):
         """kick off the parsing of the AST"""
@@ -184,6 +172,28 @@ class MathParse:
                 )
             )
         return formulae
+
+    def objectify_node(self, node):
+        if node == None:
+            return None
+        elif isinstance(node, int):
+            return node
+        elif isinstance(node, str):
+            return node
+        elif isinstance(node, list):
+            return [
+                self.objectify_node(node[i]) for i in range(len(node))
+            ]
+        else: # i hope this is an object!
+            return {
+                node.__class__.__name__: {
+                    fieldname: self.objectify_node(getattr(node, fieldname))
+                        for fieldname in node._fields
+                }
+            }
+
+    def abstractify_string(self, mathstr):
+        return self.objectify_node(ast.parse(mathstr))
 
     def mathparse_string(self, mathstr):
         """wrapper to parse Python code in a string"""

@@ -143,13 +143,124 @@ def f1(z):
     return sqrt(x)
 """
         mp = mathparse.MathParse()
-        self.assertEqual(mp.mathparse_string(f), {
-                "_f1_arg_z": "z",
-                "_f1_l3_c4_x": "(19 * [_f1_arg_z])",
-                "_f1": "sqrt([_f1_l3_c4_x])"
+        self.maxDiff = None
+        self.assertEqual(
+            mp.abstractify_string(f), {
+                "Module": {
+                    "body": [
+                        {
+                            "FunctionDef": {
+                                "name": "f1",
+                                "args": {
+                                    "arguments": {
+                                        "defaults": [],
+                                        "args": [
+                                            {
+                                                "arg": {
+                                                    "annotation": None,
+                                                    "arg": "z"
+                                                }
+                                            }
+                                        ], "kwarg": None,
+                                        "vararg": None,
+                                        "kw_defaults": [],
+                                        "kwonlyargs": []
+                                    }
+                                }, "body": [
+                                    {
+                                        "Assign": {
+                                            "targets": [
+                                                {
+                                                    "Name": {
+                                                        "ctx": {
+                                                            "Store": {}
+                                                        }, "id": 'x'
+                                                    }
+                                                }
+                                            ], "value": {
+                                                "BinOp": {
+                                                    "left": {
+                                                        "Num": {
+                                                            "n": 19
+                                                        }
+                                                    },
+                                                    "op": {
+                                                        "Mult": {}
+                                                    },
+                                                    "right": {
+                                                        "Name": {
+                                                            "ctx": {
+                                                                "Load": {}
+                                                            }, "id": "z"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "Return": {
+                                            "value": {
+                                                "Call": {
+                                                    "args": [
+                                                        {
+                                                            "Name": {
+                                                                "ctx": {
+                                                                    "Load": {},
+                                                                }, "id": "x"
+                                                            }
+                                                        }
+                                                    ], "starargs": None,
+                                                    "keywords": [],
+                                                    "func": {
+                                                        "Name": {
+                                                            "ctx": {
+                                                                "Load": {}
+                                                            }, "id": "sqrt"
+                                                        }
+                                                    },
+                                                    "kwargs": None
+                                                }
+                                            }
+                                        }
+                                    }
+                                ], "decorator_list": [],
+                                "returns": None
+                            }
+                        }
+                    ]
+                }
             }
         )
 
+#    def test_pushes_a_statement_down(self):
+#        f = """
+#def f1(z):
+#    x = 19*z
+#    return sqrt(x)
+#"""
+#        mp = mathparse.MathParse()
+#        self.assertEqual(mp.mathparse_string(f), {
+#                "_f1_arg_z": "z",
+#                "_f1_l3_c4_x": "(19 * [_f1_arg_z])",
+#                "_f1": "sqrt([_f1_l3_c4_x])"
+#            }
+#        )
+#
+#    def test_overwrites_parameters(self):
+#        f = """
+#def f1(z):
+#    z = 19*z
+#    return sqrt(z)
+#"""
+#        mp = mathparse.MathParse()
+#        self.assertEqual(mp.mathparse_string(f), {
+#                "_f1_arg_z": "z",
+#                "_f1_l3_c4_z": "(19 * [_f1_arg_z])",
+#                "_f1": "sqrt([_f1_l3_c4_z])"
+#            }
+#        )
+#
 if __name__ == '__main__':
     unittest.main()
 
