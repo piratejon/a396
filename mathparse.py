@@ -207,11 +207,68 @@ class MathParse:
     def abstractify_string(self, mathstr):
         return self.abstractify_tree(ast.parse(mathstr))
 
-    def translate_objast(self, objast):
+    def arg_to_formula_map(self, name, args):
         return {
-            "_f1_arg_z": "x",
-            "_f1": "sqrt([_f1_arg_z])"
+            arg: '_{}_arg_{}'.format(name, arg)
+                for arg in [
+                    arg['arg']['arg']
+                    for arg in args['arguments']['args']
+                ]
         }
+
+    def binop_lookup(self, binop):
+        if 'Mult' in binop: return '*'
+        return 'x'
+
+    def objast_expr(self, objast, args):
+        if 'body' in objast:
+            return self.objast_expr(objast['body'][0], args)
+        if 'Return' in objast:
+            return self.objast_expr(objast['Return']['value'], args)
+        if 'Call' in objast:
+            return '{}({})'.format(
+                objast['Call']['func']['Name']['id'],
+                ', '.join(
+                        [
+                            self.objast_expr(arg, args)
+                                for arg in objast['Call']['args']
+                        ]
+                )
+            )
+        if 'BinOp' in objast:
+            return '({} {} {})'.format(
+                self.objast_expr(objast['BinOp']['left'], args),
+                self.binop_lookup(objast['BinOp']['op']),
+                self.objast_expr(objast['BinOp']['right'], args)
+            )
+
+        if 'Num' in objast:
+            return objast['Num']['n']
+
+        if 'Name' in objast:
+            if objast['Name']['id'] in args:
+                return '[{}]'.format(args[objast['Name']['id']])
+            else:
+                return objast['Name']['id']
+
+        return 'ERRR ' + ','.join(objast.keys())
+
+    def dict_update_pipe(self, a, b):
+        a.update(b)
+        return a
+
+    def translate_objast(self, objast):
+        func = objast['Module']['body'][0]['FunctionDef']
+        name = func['name']
+        args = self.arg_to_formula_map(name, func['args'])
+        return self.dict_update_pipe(
+            {
+                '_{}'.format(name): self.objast_expr(func, args),
+            },
+            {
+                args[arg]: arg for arg in args
+            }
+        )
 
     def mathparse_string(self, mathstr):
         """wrapper to parse Python code in a string"""

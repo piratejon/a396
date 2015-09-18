@@ -335,11 +335,13 @@ def f1(z):
         mp = mathparse.MathParse()
         self.assertEqual(
             mp.translate_objast(
-                mp.abstractify_string(f)
+                mp.push_it_down(
+                    mp.abstractify_string(f)
+                )
             ),
             {
                 "_f1_arg_z": "z",
-                "_f1": "sqrt([_f1_arg_z])"
+                "_f1": "sqrt((19 * [_f1_arg_z]))"
             }
         )
 
