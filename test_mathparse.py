@@ -142,8 +142,8 @@ def f1(z):
     x = 19*z
     return sqrt(x)
 """
-        mp = mathparse.MathParse()
         self.maxDiff = None
+        mp = mathparse.MathParse()
         self.assertEqual(
             mp.abstractify_string(f), {
                 "Module": {

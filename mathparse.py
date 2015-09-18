@@ -176,9 +176,7 @@ class MathParse:
     def objectify_node(self, node):
         if node == None:
             return None
-        elif isinstance(node, int):
-            return node
-        elif isinstance(node, str):
+        elif isinstance(node, int) or isinstance(node, str):
             return node
         elif isinstance(node, list):
             return [
