@@ -326,6 +326,23 @@ def f1(z):
             }
         )
 
+    def test_translates_objectified_ast(self):
+        f = """
+def f1(z):
+    x = 19*z
+    return sqrt(x)
+"""
+        mp = mathparse.MathParse()
+        self.assertEqual(
+            mp.translate_objast(
+                mp.abstractify_string(f)
+            ),
+            {
+                "_f1_arg_z": "z",
+                "_f1": "sqrt([_f1_arg_z])"
+            }
+        )
+
 #    def test_pushes_a_statement_down(self):
 #        f = """
 #def f1(z):

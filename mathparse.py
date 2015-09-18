@@ -207,6 +207,12 @@ class MathParse:
     def abstractify_string(self, mathstr):
         return self.abstractify_tree(ast.parse(mathstr))
 
+    def translate_objast(self, objast):
+        return {
+            "_f1_arg_z": "x",
+            "_f1": "sqrt([_f1_arg_z])"
+        }
+
     def mathparse_string(self, mathstr):
         """wrapper to parse Python code in a string"""
         return self.mathparse(ast.parse(mathstr))
