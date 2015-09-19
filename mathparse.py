@@ -213,7 +213,7 @@ class MathParse:
 
     def arg_to_formula_map(self, name, args):
         return {
-            arg: '_{}_arg_{}'.format(name, arg)
+            arg: '_{}#{}'.format(name, arg)
                 for arg in [
                     arg['arg']['arg']
                     for arg in args['arguments']['args']
@@ -239,7 +239,7 @@ class MathParse:
         if 'Call' in objast:
             if objast['Call']['func']['Name']['id'] in functions:
                 copy_func = copy.deepcopy(functions[objast['Call']['func']['Name']['id']])
-                copy_func['name'] = '{}_for_{}'.format(copy_func['name'], name)
+                copy_func['name'] = '{}:{}'.format(copy_func['name'], name)
                 self.translate_objast(
                     {
                         "Module": {

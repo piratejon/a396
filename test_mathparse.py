@@ -21,8 +21,8 @@ class TestMathParse(unittest.TestCase):
         f = "def ex_identity(z): return z"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_ex_identity": "[_ex_identity_arg_z]",
-                "_ex_identity_arg_z": "z"
+                "_ex_identity": "[_ex_identity#z]",
+                "_ex_identity#z": "z"
             }
         )
 
@@ -30,24 +30,24 @@ class TestMathParse(unittest.TestCase):
         f = "def ex_add(z): return z + 1"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_ex_add": "([_ex_add_arg_z] + 1)",
-                "_ex_add_arg_z": "z"
+                "_ex_add": "([_ex_add#z] + 1)",
+                "_ex_add#z": "z"
             }
         )
 
         f = "def ex_add(z): return 1 + z"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_ex_add": "(1 + [_ex_add_arg_z])",
-                "_ex_add_arg_z": "z"
+                "_ex_add": "(1 + [_ex_add#z])",
+                "_ex_add#z": "z"
             }
         )
 
         f = "def ex_add_mult(z): return 3 * z + 1"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_ex_add_mult": "((3 * [_ex_add_mult_arg_z]) + 1)",
-                "_ex_add_mult_arg_z": "z"
+                "_ex_add_mult": "((3 * [_ex_add_mult#z]) + 1)",
+                "_ex_add_mult#z": "z"
             }
         )
 
@@ -55,9 +55,9 @@ class TestMathParse(unittest.TestCase):
         f = "def ex_add(a, b): return a + b"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_ex_add": "([_ex_add_arg_a] + [_ex_add_arg_b])",
-                "_ex_add_arg_a": "a",
-                "_ex_add_arg_b": "b",
+                "_ex_add": "([_ex_add#a] + [_ex_add#b])",
+                "_ex_add#a": "a",
+                "_ex_add#b": "b",
             }
         )
 
@@ -65,26 +65,26 @@ class TestMathParse(unittest.TestCase):
         f = "def func(z): return sqrt(z)"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_func": "sqrt([_func_arg_z])",
-                "_func_arg_z": "z",
+                "_func": "sqrt([_func#z])",
+                "_func#z": "z",
             }
         )
 
         f = "def func(zed, wisk): return wisk - sqrt(zed / 10) * 99"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_func": "([_func_arg_wisk] - (sqrt(([_func_arg_zed] / 10)) * 99))",
-                "_func_arg_zed": "zed",
-                "_func_arg_wisk": "wisk",
+                "_func": "([_func#wisk] - (sqrt(([_func#zed] / 10)) * 99))",
+                "_func#zed": "zed",
+                "_func#wisk": "wisk",
             }
         )
 
         f = "def func(zed, wisk): return (wisk - sqrt(zed / 10)) * 99"
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_func": "(([_func_arg_wisk] - sqrt(([_func_arg_zed] / 10))) * 99)",
-                "_func_arg_zed": "zed",
-                "_func_arg_wisk": "wisk",
+                "_func": "(([_func#wisk] - sqrt(([_func#zed] / 10))) * 99)",
+                "_func#zed": "zed",
+                "_func#wisk": "wisk",
             }
         )
 
@@ -98,10 +98,10 @@ def f2(y):
 """
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_f1": "(sin(([_f1_arg_z] * 9)) / 33)",
-                "_f1_arg_z": "z",
-                "_f2": "(cos(((- [_f2_arg_y]) * 9)) / 33)",
-                "_f2_arg_y": "y",
+                "_f1": "(sin(([_f1#z] * 9)) / 33)",
+                "_f1#z": "z",
+                "_f2": "(cos(((- [_f2#y]) * 9)) / 33)",
+                "_f2#y": "y",
             }
         )
 
@@ -116,9 +116,9 @@ def f2(z):
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
                 "_f1": 33,
-                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
-                "_f2_arg_z": "z",
-                "_f1_for_f2": 33
+                "_f2": "([_f2#z] + [_f1:f2])",
+                "_f2#z": "z",
+                "_f1:f2": 33
             }
         )
 
@@ -131,12 +131,12 @@ def f2(z):
 """
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_f1": "(33 + [_f1_arg_z])",
-                "_f1_arg_z": "z",
-                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
-                "_f2_arg_z": "z",
-                "_f1_for_f2": "(33 + [_f1_for_f2_arg_z])",
-                "_f1_for_f2_arg_z": "z"
+                "_f1": "(33 + [_f1#z])",
+                "_f1#z": "z",
+                "_f2": "([_f2#z] + [_f1:f2])",
+                "_f2#z": "z",
+                "_f1:f2": "(33 + [_f1:f2#z])",
+                "_f1:f2#z": "z"
             }
         )
 
@@ -342,39 +342,39 @@ def f1(z):
                 )
             ),
             {
-                "_f1_arg_z": "z",
-                "_f1": "sqrt((19 * [_f1_arg_z]))"
+                "_f1#z": "z",
+                "_f1": "sqrt((19 * [_f1#z]))"
             }
         )
 
-#    def test_pushes_a_statement_down(self):
-#        f = """
-#def f1(z):
-#    x = 19*z
-#    return sqrt(x)
-#"""
-#        mp = mathparse.MathParse()
-#        self.assertEqual(mp.mathparse_string(f), {
-#                "_f1_arg_z": "z",
-#                "_f1_l3_c4_x": "(19 * [_f1_arg_z])",
-#                "_f1": "sqrt([_f1_l3_c4_x])"
-#            }
-#        )
-#
-#    def test_overwrites_parameters(self):
-#        f = """
-#def f1(z):
-#    z = 19*z
-#    return sqrt(z)
-#"""
-#        mp = mathparse.MathParse()
-#        self.assertEqual(mp.mathparse_string(f), {
-#                "_f1_arg_z": "z",
-#                "_f1_l3_c4_z": "(19 * [_f1_arg_z])",
-#                "_f1": "sqrt([_f1_l3_c4_z])"
-#            }
-#        )
-#
+    def test_pushes_a_statement_down(self):
+        f = """
+def f1(z):
+    x = 19*z
+    return sqrt(x)
+"""
+        mp = mathparse.MathParse()
+        self.assertEqual(mp.mathparse_string(f), {
+                "_f1#z": "z",
+                "_f1.x": "(19 * [_f1#z])",
+                "_f1": "sqrt([_f1.x])"
+            }
+        )
+
+    def test_overwrites_parameters(self):
+        f = """
+def f1(z):
+    z = 19*z
+    return sqrt(z)
+"""
+        mp = mathparse.MathParse()
+        self.assertEqual(mp.mathparse_string(f), {
+                "_f1#z": "z",
+                "_f1_l3_c4_z": "(19 * [_f1#z])",
+                "_f1": "sqrt([_f1_l3_c4_z])"
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
