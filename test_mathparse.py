@@ -5,6 +5,10 @@ import mathparse
 
 class TestMathParse(unittest.TestCase):
 
+    def __init__(self, *args, **kwargs):
+        super(TestMathParse, self).__init__(*args, **kwargs)
+        self.maxDiff = None
+
     def test_ex_const(self):
         f = "def ex_const(): return 33"
         mp = mathparse.MathParse()
@@ -112,9 +116,9 @@ def f2(z):
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
                 "_f1": 33,
-                "_f2": "([_f2_arg_z] + [_f1_l6_c15])",
+                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
                 "_f2_arg_z": "z",
-                "_f1_l6_c15": 33
+                "_f1_for_f2": 33
             }
         )
 
@@ -129,10 +133,10 @@ def f2(z):
         self.assertEqual(mp.mathparse_string(f), {
                 "_f1": "(33 + [_f1_arg_z])",
                 "_f1_arg_z": "z",
-                "_f2": "([_f2_arg_z] + [_f1_l6_c15])",
+                "_f2": "([_f2_arg_z] + [_f1_for_f2])",
                 "_f2_arg_z": "z",
-                "_f1_l6_c15": "(33 + [_f1_l6_c15_arg_z])",
-                "_f1_l6_c15_arg_z": "z"
+                "_f1_for_f2": "(33 + [_f1_for_f2_arg_z])",
+                "_f1_for_f2_arg_z": "z"
             }
         )
 
@@ -142,7 +146,6 @@ def f1(z):
     x = 19*z
     return sqrt(x)
 """
-        self.maxDiff = None
         mp = mathparse.MathParse()
         self.assertEqual(
             mp.abstractify_string(f), {
@@ -252,7 +255,6 @@ def f1(z):
     x = 19*z
     return sqrt(x)
 """
-        self.maxDiff = None
         mp = mathparse.MathParse()
         self.assertEqual(
           mp.push_it_down(

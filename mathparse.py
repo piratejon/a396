@@ -80,6 +80,10 @@ class MathParse:
       CALL cumgam(xx,a,cum,ccum)
     """
 
+    def __init__(self):
+        """Initialize this instance's translated formulae"""
+        self.formulae = {}
+
     def expr(self, stmt, local_syms, real_funcs):
         """Return a Tableau expression string representing the stmt tree.
         
@@ -218,28 +222,57 @@ class MathParse:
 
     def binop_lookup(self, binop):
         if 'Mult' in binop: return '*'
-        return 'x'
+        if 'Div' in binop: return '/'
+        if 'Sub' in binop: return '-'
+        if 'Add' in binop: return '+'
+        return list(binop.keys())[0]
 
-    def objast_expr(self, objast, args):
+    def unaryop_lookup(self, unaryop):
+        if 'USub' in unaryop: return '-'
+        return list(unaryop.keys())[0]
+
+    def objast_expr(self, name, objast, args, functions):
         if 'body' in objast:
-            return self.objast_expr(objast['body'][0], args)
+            return self.objast_expr(name, objast['body'][0], args, functions)
         if 'Return' in objast:
-            return self.objast_expr(objast['Return']['value'], args)
+            return self.objast_expr(name, objast['Return']['value'], args, functions)
         if 'Call' in objast:
-            return '{}({})'.format(
-                objast['Call']['func']['Name']['id'],
-                ', '.join(
-                        [
-                            self.objast_expr(arg, args)
-                                for arg in objast['Call']['args']
-                        ]
+            if objast['Call']['func']['Name']['id'] in functions:
+                copy_func = copy.deepcopy(functions[objast['Call']['func']['Name']['id']])
+                copy_func['name'] = '{}_for_{}'.format(copy_func['name'], name)
+                self.translate_objast(
+                    {
+                        "Module": {
+                            "body": [
+                                {
+                                    "FunctionDef": copy_func
+                                }
+                            ]
+                        }
+                    }
                 )
-            )
+                return '[_{}]'.format(copy_func['name'])
+            else:
+                return '{}({})'.format(
+                    objast['Call']['func']['Name']['id'],
+                    ', '.join(
+                            [
+                                self.objast_expr(name, arg, args, functions)
+                                    for arg in objast['Call']['args']
+                            ]
+                    )
+                )
         if 'BinOp' in objast:
             return '({} {} {})'.format(
-                self.objast_expr(objast['BinOp']['left'], args),
+                self.objast_expr(name, objast['BinOp']['left'], args, functions),
                 self.binop_lookup(objast['BinOp']['op']),
-                self.objast_expr(objast['BinOp']['right'], args)
+                self.objast_expr(name, objast['BinOp']['right'], args, functions)
+            )
+
+        if 'UnaryOp' in objast:
+            return '({} {})'.format(
+                self.unaryop_lookup(objast['UnaryOp']['op']),
+                self.objast_expr(name, objast['UnaryOp']['operand'], args, functions)
             )
 
         if 'Num' in objast:
@@ -254,25 +287,37 @@ class MathParse:
         return 'ERRR ' + ','.join(objast.keys())
 
     def dict_update_pipe(self, a, b):
+        """Update and return a dictionary."""
         a.update(b)
         return a
 
     def translate_objast(self, objast):
-        func = objast['Module']['body'][0]['FunctionDef']
-        name = func['name']
-        args = self.arg_to_formula_map(name, func['args'])
-        return self.dict_update_pipe(
-            {
-                '_{}'.format(name): self.objast_expr(func, args),
-            },
-            {
-                args[arg]: arg for arg in args
-            }
-        )
+        """Run through objast determining new formulae, updating self.formulae"""
+        result_trees = {} # f1 -> abstractified FunctionDef
+        for body_elt in objast['Module']['body']:
+            func = body_elt['FunctionDef']
+            name = func['name']
+            formula_name = '_{}'.format(name)
+            args = self.arg_to_formula_map(name, func['args'])
+            # do bodies first and names second to prevent recursion for now
+            self.formulae.update(
+                {
+                    formula_name: self.objast_expr(name, func, args, result_trees),
+                }
+            )
+
+            self.formulae.update(
+                {
+                    args[arg]: arg for arg in args
+                }
+            )
+            result_trees.update({name: func})
+        return self.formulae
 
     def mathparse_string(self, mathstr):
         """wrapper to parse Python code in a string"""
-        return self.mathparse(ast.parse(mathstr))
+        return self.translate_objast(self.abstractify_string(mathstr))
+#return self.mathparse(ast.parse(mathstr))
 
     def mathparse_file(self, fname):
         """wrapper to parse Python code in a file"""
