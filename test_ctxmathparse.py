@@ -43,11 +43,19 @@ def f1(x):
             "([_f1_arg_x] + 9)"
         )
 
-#        self.assertEqual(mpctx.translate(), {
-#                "_f1_arg_x": "x",
-#                "_f1": "([_f1_arg_x] + 9)"
-#            }
-#        )
+        self.assertEqual(ctxmathparse.collect_function_statements(mpctx.function_list[0]), [
+                "([_f1_arg_x] + 9)"
+            ]
+        )
+
+        self.assertEqual(ctxmathparse.get_function_statement(mpctx.function_list[0]), "[_f1_stmt_0]")
+
+        self.assertEqual(mpctx.translate(), {
+                "_f1_arg_x": "x",
+                "_f1_stmt_0": "([_f1_arg_x] + 9)",
+                "_f1": "[_f1_stmt_0]"
+            }
+        )
 
         f = """
 def f1(x):
@@ -74,12 +82,14 @@ def f2(x):
 
 #        self.assertEqual(mpctx.translate(), {
 #                "_f1_arg_x": "x",
-#                "_f1": "([_f1_arg_x] + 9)",
+#                "_f1_stmt_0": "([_f1_arg_x] + 9)",
+#                "_f1": "[_f1_stmt_0]",
 #                "_f2_arg_x": "x",
-#                "_f2": "([_f2_arg_x] * 99)"
+#                "_f2_stmt_0": "([_f2_arg_x] * 99)",
+#                "_f2": "[_f2_stmt_0]"
 #            }
 #        )
-
+#
 if __name__ == '__main__':
     unittest.main()
 

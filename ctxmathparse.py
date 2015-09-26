@@ -87,12 +87,30 @@ def translate_expression(fname, args, expr):
     return 'unrecognized statement type ' + list(expr.keys())[0]
 
 def translate_function_statement(func, stmt):
-    """Translate a single statement in the function's context."""
+    """Translate a single statement in the given function's context."""
     args = get_function_args(func)
     if 'Return' in stmt:
         return translate_expression(func['name'], args, stmt['Return']['value'])
     else:
         return 'unknown statement type ' + (stmt.keys())[0]
+
+def collect_function_statements(func):
+    """
+        Return an ordered list of expressions for each statement in the function.
+    """
+    return [
+        translate_function_statement(func, func['body'][i])
+        for i in range(len(func['body']))
+    ]
+
+def get_function_statement(func):
+    """Compose the function's top-level statements into a final expression."""
+    return '[_{}_stmt_{}]'.format(func['name'], 0)
+
+def invert_dict(d):
+    return {
+        v: k for k, v in d.items()
+    }
 
 class MathParse:
     """
@@ -106,8 +124,22 @@ class MathParse:
         self.source = ""
         self.objast = None
 
-    def translate_function_statement(self, stmt):
-        """Translate a single statement in the current context."""
+    def translate(self):
+        """Translate this context's function list."""
+        result = {}
+        for func in self.function_list:
+            stmts = collect_function_statements(func)
+            result.update(invert_dict(get_function_args(func)))
+            result.update({
+                    '_{}_stmt_{}'.format(func['name'], i): stmts[i]
+                    for i in range(len(stmts))
+                }
+            )
+            result.update({
+                    '_{}'.format(func['name']): get_function_statement(func)
+                }
+            )
+        return result
 
     def parse_string(self, mathstr):
         """Consume a string, keeping a source copy and storing its objast."""
