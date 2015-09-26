@@ -91,8 +91,10 @@ def translate_function_statement(func, stmt):
     args = get_function_args(func)
     if 'Return' in stmt:
         return translate_expression(func['name'], args, stmt['Return']['value'])
+    elif 'Assign' in stmt:
+        return translate_expression(func['name'], args, stmt['Assign']['value'])
     else:
-        return 'unknown statement type ' + (stmt.keys())[0]
+        return 'unknown statement type ' + list(stmt.keys())[0]
 
 def collect_function_statements(func):
     """
@@ -105,12 +107,13 @@ def collect_function_statements(func):
 
 def get_function_statement(func):
     """Compose the function's top-level statements into a final expression."""
-    return '[_{}_stmt_{}]'.format(func['name'], 0)
+    return '[_{}_stmt_{}]'.format(
+        func['name'], len(collect_function_statements(func)) - 1
+    )
 
-def invert_dict(d):
-    return {
-        v: k for k, v in d.items()
-    }
+def invert_dict(swap_me):
+    """Swap each key -> value pair in a dictionary."""
+    return {v: k for k, v in swap_me.items()}
 
 class MathParse:
     """
@@ -130,12 +133,14 @@ class MathParse:
         for func in self.function_list:
             stmts = collect_function_statements(func)
             result.update(invert_dict(get_function_args(func)))
-            result.update({
+            result.update(
+                {
                     '_{}_stmt_{}'.format(func['name'], i): stmts[i]
                     for i in range(len(stmts))
                 }
             )
-            result.update({
+            result.update(
+                {
                     '_{}'.format(func['name']): get_function_statement(func)
                 }
             )

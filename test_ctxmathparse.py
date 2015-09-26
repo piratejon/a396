@@ -90,6 +90,23 @@ def f2(x):
             }
         )
 
+    def test_two_statements_in_one_function(self):
+        f = """
+def f1(x, y):
+    a = x * y
+    return a + 5
+"""
+        mpctx = ctxmathparse.MathParse()
+        mpctx.parse_string(f)
+        self.assertEqual(mpctx.translate(), {
+                "_f1_arg_x": "x",
+                "_f1_arg_y": "y",
+                "_f1_stmt_0": "([_f1_arg_x] * [_f1_arg_y])",
+                "_f1_stmt_1": "([_f1_stmt_0] + 5)",
+                "_f1": "[_f1_stmt_1]"
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
