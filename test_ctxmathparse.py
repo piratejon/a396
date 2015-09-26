@@ -111,7 +111,7 @@ def f1(x, y):
         f = """
 def f(a, x, y):
     a = x * y
-    a = a - 6
+    a -= 6
     return a + 7
 """
 

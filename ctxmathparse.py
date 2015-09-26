@@ -123,12 +123,10 @@ class MathParseFunction:
             self.localvars.update(new_local)
             return expr_string
         elif 'AugAssign' in stmt:
-            self.localvars.update(
-                {
-                    stmt['AugAssign']['target']['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
-                }
-            )
-            return translate_expression(
+            new_local = {
+                stmt['AugAssign']['target']['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
+            }
+            expr_string = translate_expression(
                 self.name, self.args, self.localvars, {
                     "BinOp": {
                         "left": stmt['AugAssign']['target'],
@@ -137,6 +135,8 @@ class MathParseFunction:
                     }
                 }
             )
+            self.localvars.update(new_local)
+            return expr_string
         else:
             return 'unknown statement type ' + list(stmt.keys())[0]
 
