@@ -42,14 +42,15 @@ def functions_from_ast(objast):
         functions in the objast.
     """
     return [
-        o['FunctionDef'] for o in objast['Module']['body'] if 'FunctionDef' in o
+        MathParseFunction(o['FunctionDef'])
+        for o in objast['Module']['body'] if 'FunctionDef' in o
     ]
 
-def get_function_args(func):
+def get_astfunction_args(astfunc):
     """Return a map of arg name -> Tableau function name."""
     return {
-        arg['arg']['arg']: '_{}_arg_{}'.format(func['name'], arg['arg']['arg'])
-        for arg in func['args']['arguments']['args']
+        arg['arg']['arg']: '_{}_arg_{}'.format(astfunc['name'], arg['arg']['arg'])
+        for arg in astfunc['args']['arguments']['args']
     }
 
 def translate_binop(operator):
@@ -86,34 +87,51 @@ def translate_expression(fname, args, expr):
 
     return 'unrecognized statement type ' + list(expr.keys())[0]
 
-def translate_function_statement(func, stmt):
-    """Translate a single statement in the given function's context."""
-    args = get_function_args(func)
-    if 'Return' in stmt:
-        return translate_expression(func['name'], args, stmt['Return']['value'])
-    elif 'Assign' in stmt:
-        return translate_expression(func['name'], args, stmt['Assign']['value'])
-    else:
-        return 'unknown statement type ' + list(stmt.keys())[0]
-
-def collect_function_statements(func):
-    """
-        Return an ordered list of expressions for each statement in the function.
-    """
-    return [
-        translate_function_statement(func, func['body'][i])
-        for i in range(len(func['body']))
-    ]
-
-def get_function_statement(func):
-    """Compose the function's top-level statements into a final expression."""
-    return '[_{}_stmt_{}]'.format(
-        func['name'], len(collect_function_statements(func)) - 1
-    )
-
 def invert_dict(swap_me):
     """Swap each key -> value pair in a dictionary."""
     return {v: k for k, v in swap_me.items()}
+
+class MathParseFunction:
+    """
+        Encapsulate the state associated with translating a single function.
+    """
+
+    def __init__(self, astfunc):
+        """Initialize class instance from objast"""
+        self.localvars = {}
+        self.name = astfunc['name']
+        self.args = get_astfunction_args(astfunc)
+        self.body = astfunc['body']
+
+    def translate_function_statement(self, i):
+        """Translate a single statement in the given function's context."""
+        stmt = self.body[i]
+        if 'Return' in stmt:
+            return translate_expression(self.name, self.args, stmt['Return']['value'])
+        elif 'Assign' in stmt:
+            self.localvars.update(
+                {
+                    stmt['Assign']['targets'][0]['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
+                }
+            )
+            return translate_expression(self.name, self.args, stmt['Assign']['value'])
+        else:
+            return 'unknown statement type ' + list(stmt.keys())[0]
+
+    def collect_function_statements(self):
+        """
+            Return an ordered list of expressions for each statement in the function.
+        """
+        return [
+            self.translate_function_statement(i)
+            for i in range(len(self.body))
+        ]
+
+    def get_function_statement(self):
+        """Compose the function's top-level statements into a final expression."""
+        return '[_{}_stmt_{}]'.format(
+            self.name, len(self.collect_function_statements()) - 1
+        )
 
 class MathParse:
     """
@@ -131,17 +149,17 @@ class MathParse:
         """Translate this context's function list."""
         result = {}
         for func in self.function_list:
-            stmts = collect_function_statements(func)
-            result.update(invert_dict(get_function_args(func)))
+            stmts = func.body
+            result.update(invert_dict(func.args))
             result.update(
                 {
-                    '_{}_stmt_{}'.format(func['name'], i): stmts[i]
+                    '_{}_stmt_{}'.format(func.name, i): func.translate_function_statement(i)
                     for i in range(len(stmts))
                 }
             )
             result.update(
                 {
-                    '_{}'.format(func['name']): get_function_statement(func)
+                    '_{}'.format(func.name): func.get_function_statement()
                 }
             )
         return result

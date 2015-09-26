@@ -31,24 +31,24 @@ def f1(x):
         mpctx = ctxmathparse.MathParse()
         mpctx.parse_string(f)
         self.assertEqual(len(mpctx.function_list), 1)
-        self.assertEqual(mpctx.function_list[0]['name'], "f1")
+        self.assertEqual(mpctx.function_list[0].name, "f1")
 
-        self.assertEqual(ctxmathparse.get_function_args(mpctx.function_list[0]), {
+        self.assertEqual(mpctx.function_list[0].args, {
                 "x": "_f1_arg_x"
             }
         )
 
         self.assertEqual(
-            ctxmathparse.translate_function_statement(mpctx.function_list[0], mpctx.function_list[0]['body'][0]),
+            mpctx.function_list[0].translate_function_statement(0),
             "([_f1_arg_x] + 9)"
         )
 
-        self.assertEqual(ctxmathparse.collect_function_statements(mpctx.function_list[0]), [
+        self.assertEqual(mpctx.function_list[0].collect_function_statements(), [
                 "([_f1_arg_x] + 9)"
             ]
         )
 
-        self.assertEqual(ctxmathparse.get_function_statement(mpctx.function_list[0]), "[_f1_stmt_0]")
+        self.assertEqual(mpctx.function_list[0].get_function_statement(), "[_f1_stmt_0]")
 
         self.assertEqual(mpctx.translate(), {
                 "_f1_arg_x": "x",
@@ -67,15 +67,15 @@ def f2(x):
         mpctx = ctxmathparse.MathParse()
         mpctx.parse_string(f)
         self.assertEqual(len(mpctx.function_list), 2)
-        self.assertEqual(mpctx.function_list[0]['name'], "f1")
-        self.assertEqual(mpctx.function_list[1]['name'], "f2")
+        self.assertEqual(mpctx.function_list[0].name, "f1")
+        self.assertEqual(mpctx.function_list[1].name, "f2")
 
-        self.assertEqual(ctxmathparse.get_function_args(mpctx.function_list[0]), {
+        self.assertEqual(mpctx.function_list[0].args, {
                 "x": "_f1_arg_x"
             }
         )
 
-        self.assertEqual(ctxmathparse.get_function_args(mpctx.function_list[1]), {
+        self.assertEqual(mpctx.function_list[1].args, {
                 "x": "_f2_arg_x"
             }
         )
