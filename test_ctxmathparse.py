@@ -38,6 +38,11 @@ def f1(x):
             }
         )
 
+        self.assertEqual(
+            ctxmathparse.translate_function_statement(mpctx.function_list[0], mpctx.function_list[0]['body'][0]),
+            "([_f1_arg_x] + 9)"
+        )
+
 #        self.assertEqual(mpctx.translate(), {
 #                "_f1_arg_x": "x",
 #                "_f1": "([_f1_arg_x] + 9)"

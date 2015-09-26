@@ -52,6 +52,48 @@ def get_function_args(func):
         for arg in func['args']['arguments']['args']
     }
 
+def translate_binop(operator):
+    """Convert a BinOp op object into the corresponding math symbol."""
+    keylist = list(operator.keys())
+    try:
+        result = {
+            "Mult": "*",
+            "Add": "+",
+        }[keylist[0]]
+    except KeyError:
+        result = keylist[0]
+
+    return result
+
+def translate_expression(fname, args, expr):
+    """Recursively translate an expression for the given function and arguments."""
+    if 'BinOp' in expr:
+        return (
+            '({} {} {})'.format(
+                translate_expression(fname, args, expr['BinOp']['left']),
+                translate_binop(expr['BinOp']['op']),
+                translate_expression(fname, args, expr['BinOp']['right'])
+            )
+        )
+    elif 'Name' in expr:
+        name = expr['Name']['id']
+        if name in args:
+            return '[{}]'.format(args[name])
+        else:
+            return name
+    elif 'Num' in expr:
+        return expr['Num']['n']
+
+    return 'unrecognized statement type ' + list(expr.keys())[0]
+
+def translate_function_statement(func, stmt):
+    """Translate a single statement in the function's context."""
+    args = get_function_args(func)
+    if 'Return' in stmt:
+        return translate_expression(func['name'], args, stmt['Return']['value'])
+    else:
+        return 'unknown statement type ' + (stmt.keys())[0]
+
 class MathParse:
     """
         Encapsulate the state required to translate a sequence of functions in
@@ -64,13 +106,8 @@ class MathParse:
         self.source = ""
         self.objast = None
 
-#    def push_it_down(self, orig_tree):
-#        tree = copy.deepcopy(orig_tree)
-#        symbol = tree['Module']['body'][0]['FunctionDef']['body'][0]['Assign']['targets'][0]['Name']['id']
-#        value = tree['Module']['body'][0]['FunctionDef']['body'][0]['Assign']['value']
-#        tree['Module']['body'][0]['FunctionDef']['body'][1]['Return']['value']['Call']['args'][0] = value
-#        del tree['Module']['body'][0]['FunctionDef']['body'][0]
-#        return tree
+    def translate_function_statement(self, stmt):
+        """Translate a single statement in the current context."""
 
     def parse_string(self, mathstr):
         """Consume a string, keeping a source copy and storing its objast."""
