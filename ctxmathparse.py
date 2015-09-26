@@ -79,10 +79,10 @@ def translate_expression(fname, args, localvars, expr):
         )
     elif 'Name' in expr:
         name = expr['Name']['id']
-        if name in args:
-            return '[{}]'.format(args[name])
-        elif name in localvars:
+        if name in localvars: # look in localvars to see if a symbol got overwritten
             return '[{}]'.format(localvars[name])
+        elif name in args:
+            return '[{}]'.format(args[name])
         else:
             return name
     elif 'Num' in expr:
@@ -114,14 +114,14 @@ class MathParseFunction:
                 self.name, self.args, self.localvars, stmt['Return']['value']
             )
         elif 'Assign' in stmt:
-            self.localvars.update(
-                {
-                    stmt['Assign']['targets'][0]['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
-                }
-            )
-            return translate_expression(
+            new_local = {
+                stmt['Assign']['targets'][0]['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
+            }
+            expr_string = translate_expression(
                 self.name, self.args, self.localvars, stmt['Assign']['value']
             )
+            self.localvars.update(new_local)
+            return expr_string
         elif 'AugAssign' in stmt:
             self.localvars.update(
                 {
