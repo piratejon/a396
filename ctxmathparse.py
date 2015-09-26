@@ -66,20 +66,22 @@ def translate_binop(operator):
 
     return result
 
-def translate_expression(fname, args, expr):
+def translate_expression(fname, args, localvars, expr):
     """Recursively translate an expression for the given function and arguments."""
     if 'BinOp' in expr:
         return (
             '({} {} {})'.format(
-                translate_expression(fname, args, expr['BinOp']['left']),
+                translate_expression(fname, args, localvars, expr['BinOp']['left']),
                 translate_binop(expr['BinOp']['op']),
-                translate_expression(fname, args, expr['BinOp']['right'])
+                translate_expression(fname, args, localvars, expr['BinOp']['right'])
             )
         )
     elif 'Name' in expr:
         name = expr['Name']['id']
         if name in args:
             return '[{}]'.format(args[name])
+        elif name in localvars:
+            return '[{}]'.format(localvars[name])
         else:
             return name
     elif 'Num' in expr:
@@ -107,14 +109,18 @@ class MathParseFunction:
         """Translate a single statement in the given function's context."""
         stmt = self.body[i]
         if 'Return' in stmt:
-            return translate_expression(self.name, self.args, stmt['Return']['value'])
+            return translate_expression(
+                self.name, self.args, self.localvars, stmt['Return']['value']
+            )
         elif 'Assign' in stmt:
             self.localvars.update(
                 {
                     stmt['Assign']['targets'][0]['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
                 }
             )
-            return translate_expression(self.name, self.args, stmt['Assign']['value'])
+            return translate_expression(
+                self.name, self.args, self.localvars, stmt['Assign']['value']
+            )
         else:
             return 'unknown statement type ' + list(stmt.keys())[0]
 
