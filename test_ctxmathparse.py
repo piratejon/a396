@@ -12,9 +12,16 @@ class TestMathParse(unittest.TestCase):
 
     def test_init(self):
         mpctx = ctxmathparse.MathParse()
-        self.assertEqual(mpctx.functions, [])
-        self.assertEqual(mpctx.source, {})
-        self.assertEqual(mpctx.ast, None)
+        self.assertEqual(mpctx.function_list, [])
+        self.assertEqual(mpctx.source, '')
+        self.assertEqual(mpctx.objast, None)
+
+    def test_objectify_ast(self):
+        f = """
+def f1(x):
+    return x + 9
+"""
+        objast = ctxmathparse.objectify_string(f)
 
     def test_add_function_to_context(self):
         f = """
@@ -23,8 +30,19 @@ def f1(x):
 """
         mpctx = ctxmathparse.MathParse()
         mpctx.parse_string(f)
-        self.assertEqual(len(mpctx.functions), 1)
-        self.assertEqual(mpctx.functions[0]['name'], "f1")
+        self.assertEqual(len(mpctx.function_list), 1)
+        self.assertEqual(mpctx.function_list[0]['name'], "f1")
+
+        self.assertEqual(ctxmathparse.get_function_args(mpctx.function_list[0]), {
+                "x": "_f1_arg_x"
+            }
+        )
+
+#        self.assertEqual(mpctx.translate(), {
+#                "_f1_arg_x": "x",
+#                "_f1": "([_f1_arg_x] + 9)"
+#            }
+#        )
 
         f = """
 def f1(x):
@@ -35,9 +53,27 @@ def f2(x):
 """
         mpctx = ctxmathparse.MathParse()
         mpctx.parse_string(f)
-        self.assertEqual(len(mpctx.functions), 2)
-        self.assertEqual(mpctx.functions[0]['name'], "f1")
-        self.assertEqual(mpctx.functions[1]['name'], "f2")
+        self.assertEqual(len(mpctx.function_list), 2)
+        self.assertEqual(mpctx.function_list[0]['name'], "f1")
+        self.assertEqual(mpctx.function_list[1]['name'], "f2")
+
+        self.assertEqual(ctxmathparse.get_function_args(mpctx.function_list[0]), {
+                "x": "_f1_arg_x"
+            }
+        )
+
+        self.assertEqual(ctxmathparse.get_function_args(mpctx.function_list[1]), {
+                "x": "_f2_arg_x"
+            }
+        )
+
+#        self.assertEqual(mpctx.translate(), {
+#                "_f1_arg_x": "x",
+#                "_f1": "([_f1_arg_x] + 9)",
+#                "_f2_arg_x": "x",
+#                "_f2": "([_f2_arg_x] * 99)"
+#            }
+#        )
 
 if __name__ == '__main__':
     unittest.main()
