@@ -60,6 +60,7 @@ def translate_binop(operator):
         result = {
             "Mult": "*",
             "Add": "+",
+            "Sub": "-",
         }[keylist[0]]
     except KeyError:
         result = keylist[0]
@@ -87,7 +88,7 @@ def translate_expression(fname, args, localvars, expr):
     elif 'Num' in expr:
         return expr['Num']['n']
 
-    return 'unrecognized statement type ' + list(expr.keys())[0]
+    return 'unrecognized expression type ' + list(expr.keys())[0]
 
 def invert_dict(swap_me):
     """Swap each key -> value pair in a dictionary."""
@@ -120,6 +121,21 @@ class MathParseFunction:
             )
             return translate_expression(
                 self.name, self.args, self.localvars, stmt['Assign']['value']
+            )
+        elif 'AugAssign' in stmt:
+            self.localvars.update(
+                {
+                    stmt['AugAssign']['target']['Name']['id']: '_{}_stmt_{}'.format(self.name, i)
+                }
+            )
+            return translate_expression(
+                self.name, self.args, self.localvars, {
+                    "BinOp": {
+                        "left": stmt['AugAssign']['target'],
+                        "op": stmt['AugAssign']['op'],
+                        "right": stmt['AugAssign']['value']
+                    }
+                }
             )
         else:
             return 'unknown statement type ' + list(stmt.keys())[0]

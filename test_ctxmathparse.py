@@ -107,6 +107,29 @@ def f1(x, y):
             }
         )
 
+    def test_augadd(self):
+        f = """
+def f(a, x, y):
+    a = x * y
+    a -= 6
+    return a + 7
+"""
+
+        # o = ctxmathparse.objectify_string(f)
+        # print(o)
+        mpctx = ctxmathparse.MathParse()
+        mpctx.parse_string(f)
+        self.assertEqual(mpctx.translate(), {
+                "_f_arg_a": "a",
+                "_f_arg_x": "x",
+                "_f_arg_y": "y",
+                "_f_stmt_0": "([_f_arg_x] * [_f_arg_y])",
+                "_f_stmt_1": "([_f_stmt_0] - 6)",
+                "_f_stmt_2": "([_f_stmt_1] + 7)",
+                "_f": "[_f_stmt_2]"
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
