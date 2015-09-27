@@ -99,11 +99,19 @@ class MathParseContext:
         Encapsulate the state associated with a single context.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, parent = None):
         """Initialize the context's name."""
         self.name = name
-        self.symbols = {}
-        self.parent = None
+        self.parent = parent
+
+    def translate_symbol(self, name):
+        return '_{}:{}'.format(self.name, name)
+
+    def create_child_context(self, name):
+        return MathParseContext("{}:{}".format(self.name, name), self)
+
+    def get_parent(self):
+        return self.parent
 
 class MathParseFunction:
     """

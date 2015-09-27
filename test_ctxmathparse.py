@@ -157,6 +157,18 @@ def f(a, x, y):
 #            }
 #        )
 
+    def test_translate_symbol_in_context(self):
+        ctx = ctxmathparse.MathParseContext("enclosing_context")
+        self.assertEqual(ctx.translate_symbol("a"), "_enclosing_context:a")
+
+        childctx = ctx.create_child_context("enclosed_context")
+        self.assertEqual(childctx.translate_symbol("b"), "_enclosing_context:enclosed_context:b")
+        self.assertEqual(childctx.get_parent(), ctx)
+
+        secondchild = childctx.create_child_context("2nd_context")
+        self.assertEqual(secondchild.translate_symbol("c"), "_enclosing_context:enclosed_context:2nd_context:c")
+        self.assertEqual(secondchild.get_parent(), childctx)
+
 if __name__ == '__main__':
     unittest.main()
 
