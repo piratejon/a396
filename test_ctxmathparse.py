@@ -21,7 +21,60 @@ class TestMathParse(unittest.TestCase):
 def f1(x):
     return x + 9
 """
-        objast = ctxmathparse.objectify_string(f)
+        self.assertEqual(ctxmathparse.objectify_string(f), {
+                "Module": {
+                    "body": [
+                        {
+                            "FunctionDef": {
+                                "name": "f1",
+                                "returns": None,
+                                "decorator_list": [],
+                                "args": {
+                                    "arguments": {
+                                        "args": [
+                                            {
+                                                "arg": {
+                                                    "arg": "x",
+                                                    "annotation": None,
+                                                }
+                                            }
+                                        ], "kw_defaults": [],
+                                        "defaults": [],
+                                        "kwarg": None,
+                                        "kwonlyargs": [],
+                                        "vararg": None
+                                    }
+                                }, "body": [
+                                    {
+                                        "Return": {
+                                            "value": {
+                                                "BinOp": {
+                                                    "left": {
+                                                        "Name": {
+                                                            "ctx": {
+                                                                "Load": {}
+                                                            }, "id": "x"
+                                                        }
+                                                    },
+                                                    "op": {
+                                                        "Add": { }
+                                                    },
+                                                    "right": {
+                                                        "Num": {
+                                                            "n": 9
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        )
 
     def test_add_function_to_context(self):
         f = """
