@@ -110,9 +110,6 @@ class MathParseContext:
     def create_child_context(self, name):
         return MathParseContext("{}:{}".format(self.name, name), self)
 
-    def get_parent(self):
-        return self.parent
-
 class MathParseFunction:
     """
         Encapsulate the state associated with translating a single function.
