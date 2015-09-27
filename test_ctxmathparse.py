@@ -130,6 +130,33 @@ def f(a, x, y):
             }
         )
 
+#    def test_if(self):
+#        f = """
+#def f(a, x, y):
+#    a = x * y
+#    if x > 9:
+#        a += 8
+#    else:
+#        a = a
+#    return a + 7
+#"""
+#
+#        mpctx = ctxmathparse.MathParse()
+#        mpctx.parse_string(f)
+#        print(mpctx.objast)
+#        self.assertEqual(mpctx.translate(), {
+#                "_f_arg_a": "a",
+#                "_f_arg_x": "x",
+#                "_f_arg_y": "y",
+#                "_f_stmt_0": "([_f_arg_x] * [_f_arg_y])",
+#                "_f_stmt_1_t": "([_f_stmt_0] + 8)",
+#                "_f_stmt_1_f": "[_f_stmt_0]",
+#                "_f_stmt_1": "IF ([_f_arg_x] > 9) THEN [_f_stmt_1_t] ELSE [_f_stmt_1_f] END",
+#                "_f_stmt_2": "([_f_stmt_1] + 7)",
+#                "_f": "[_f_stmt_2]"
+#            }
+#        )
+
 if __name__ == '__main__':
     unittest.main()
 

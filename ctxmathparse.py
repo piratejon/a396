@@ -94,6 +94,17 @@ def invert_dict(swap_me):
     """Swap each key -> value pair in a dictionary."""
     return {v: k for k, v in swap_me.items()}
 
+class MathParseContext:
+    """
+        Encapsulate the state associated with a single context.
+    """
+
+    def __init__(self, name):
+        """Initialize the context's name."""
+        self.name = name
+        self.symbols = {}
+        self.parent = None
+
 class MathParseFunction:
     """
         Encapsulate the state associated with translating a single function.
@@ -137,6 +148,10 @@ class MathParseFunction:
             )
             self.localvars.update(new_local)
             return expr_string
+        elif 'If' in stmt:
+            new_local = {
+                stmt['If']['body']
+            }
         else:
             return 'unknown statement type ' + list(stmt.keys())[0]
 
