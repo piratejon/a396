@@ -159,15 +159,29 @@ def f(a, x, y):
 
     def test_translate_symbol_in_context(self):
         ctx = ctxmathparse.MathParseContext("enclosing_context")
+        ctx.add_symbol("a")
         self.assertEqual(ctx.translate_symbol("a"), "_enclosing_context:a")
 
         childctx = ctx.create_child_context("enclosed_context")
+        childctx.add_symbol("b")
         self.assertEqual(childctx.translate_symbol("b"), "_enclosing_context:enclosed_context:b")
         self.assertEqual(childctx.parent, ctx)
 
         secondchild = childctx.create_child_context("2nd_context")
+        secondchild.add_symbol("c")
         self.assertEqual(secondchild.translate_symbol("c"), "_enclosing_context:enclosed_context:2nd_context:c")
         self.assertEqual(secondchild.parent, childctx)
+
+    def test_find_symbol_in_context(self):
+        ctx0 = ctxmathparse.MathParseContext("ctx0")
+        ctx0.add_symbol("a")
+        self.assertEqual(ctx0.translate_symbol("a"), "_ctx0:a")
+        ctx1 = ctx0.create_child_context("ctx1")
+        ctx1.add_symbol("b")
+        self.assertEqual(ctx1.translate_symbol("b"), "_ctx0:ctx1:b")
+        self.assertEqual(ctx1.translate_symbol("a"), "_ctx0:a")
+        with self.assertRaises(ValueError):
+            ctx1.translate_symbol("c")
 
 if __name__ == '__main__':
     unittest.main()

@@ -103,12 +103,21 @@ class MathParseContext:
         """Initialize the context's name."""
         self.name = name
         self.parent = parent
+        self.symbols = set()
 
-    def translate_symbol(self, name):
-        return '_{}:{}'.format(self.name, name)
+    def translate_symbol(self, symbol):
+        if symbol in self.symbols:
+            return '_{}:{}'.format(self.name, symbol)
+        elif self.parent is not None:
+            return self.parent.translate_symbol(symbol)
+        else:
+            raise ValueError(symbol)
 
     def create_child_context(self, name):
         return MathParseContext("{}:{}".format(self.name, name), self)
+
+    def add_symbol(self, symbol):
+        self.symbols.add(symbol)
 
 class MathParseFunction:
     """
