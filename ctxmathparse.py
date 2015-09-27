@@ -106,6 +106,7 @@ class MathParseContext:
         self.symbols = set()
 
     def translate_symbol(self, symbol):
+        """Seek the symbol in the context or parent context and return its Tableau name."""
         if symbol in self.symbols:
             return '_{}:{}'.format(self.name, symbol)
         elif self.parent is not None:
