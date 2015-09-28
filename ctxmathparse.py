@@ -104,6 +104,7 @@ class MathParseContext:
         self.name = name
         self.parent = parent
         self.symbols = set()
+        self.modified_symbols = set()
 
     def translate_symbol(self, symbol):
         """Seek the symbol in the context or parent context and return its Tableau name."""
@@ -115,10 +116,53 @@ class MathParseContext:
             raise ValueError(symbol)
 
     def create_child_context(self, name):
+        """Return a new context with this context as the parent and the appropriate name."""
         return MathParseContext("{}:{}".format(self.name, name), self)
 
     def add_symbol(self, symbol):
+        """Add a symbol to the context."""
         self.symbols.add(symbol)
+
+    def populate_modified_symbols(self, objast):
+        """Find out which symbols are modified in this objast."""
+        if 'Module' in objast:
+            self.populate_modified_symbols(objast['Module'])
+        elif 'body' in objast:
+            for b in objast['body']:
+                self.populate_modified_symbols(b)
+        elif 'AugAssign' in objast:
+            self.populate_modified_symbols(objast['AugAssign']['target'])
+        elif 'Name' in objast:
+            self.modified_symbols.add(objast['Name']['id'])
+        elif 'Assign' in objast:
+            for s in objast['Assign']['targets']:
+                self.populate_modified_symbols(s)
+        else:
+            raise ValueError(objast.keys())
+
+    def populate_symbols(self, objast):
+        """Find all symbols mentioned in this objast."""
+        if 'Module' in objast:
+            self.populate_symbols(objast['Module'])
+        elif 'body' in objast:
+            for b in objast['body']:
+                self.populate_symbols(b)
+        elif 'AugAssign' in objast:
+            self.populate_symbols(objast['AugAssign']['target'])
+            self.populate_symbols(objast['AugAssign']['value'])
+        elif 'Name' in objast:
+            self.symbols.add(objast['Name']['id'])
+        elif 'Assign' in objast:
+            for s in objast['Assign']['targets']:
+                self.populate_symbols(s)
+            self.populate_symbols(objast['Assign']['value'])
+        elif 'Num' in objast:
+            pass
+        elif 'BinOp' in objast:
+            self.populate_symbols(objast['BinOp']['left'])
+            self.populate_symbols(objast['BinOp']['right'])
+        else:
+            raise ValueError(objast)
 
 class MathParseFunction:
     """
@@ -191,8 +235,10 @@ class MathParse:
         a single context.
     """
 
-    def __init__(self):
+    def __init__(self, context_name='_'):
         """Set default empty values for instance variables."""
+        self.context = MathParseContext(context_name)
+
         self.function_list = []
         self.source = ""
         self.objast = None
@@ -215,6 +261,13 @@ class MathParse:
                 }
             )
         return result
+
+    def context_parse_string(self, mathstr):
+        """Consume a string, updating it into the context."""
+        self.source = mathstr
+        self.objast = objectify_string(mathstr)
+        self.context.populate_modified_symbols(self.objast)
+        self.context.populate_symbols(self.objast)
 
     def parse_string(self, mathstr):
         """Consume a string, keeping a source copy and storing its objast."""

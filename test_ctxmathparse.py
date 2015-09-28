@@ -236,6 +236,18 @@ def f(a, x, y):
         with self.assertRaises(ValueError):
             ctx1.translate_symbol("c")
 
+    def test_find_modified_symbols(self):
+        f = """
+a += b
+c = 99
+a = b * c
+"""
+        mathparse = ctxmathparse.MathParse()
+        mathparse.context_parse_string(f)
+        self.assertEqual(mathparse.context.name, '_')
+        self.assertEqual(mathparse.context.modified_symbols, set({'a', 'c'}))
+        self.assertEqual(mathparse.context.symbols, set({'a', 'b', 'c'}))
+
 if __name__ == '__main__':
     unittest.main()
 
