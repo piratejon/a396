@@ -254,6 +254,8 @@ if b > 75:
     c += 99
 elif b > 60:
     c += 50
+elif b < d:
+    pass
 else:
     c += 25
 a += c
@@ -261,7 +263,7 @@ a += c
         mathparse = ctxmathparse.MathParse()
         mathparse.context_parse_string(f)
         self.assertEqual(mathparse.context.modified_symbols, set({'a', 'c'}))
-        self.assertEqual(mathparse.context.symbols, set({'a', 'b', 'c'}))
+        self.assertEqual(mathparse.context.symbols, set({'a', 'b', 'c', 'd'}))
 
 if __name__ == '__main__':
     unittest.main()

@@ -142,6 +142,8 @@ class MathParseContext:
                 self.populate_modified_symbols(s)
             for s in objast['If']['orelse']:
                 self.populate_modified_symbols(s)
+        elif 'Pass' in objast:
+            pass
         else:
             raise ValueError(objast.keys())
 
@@ -176,6 +178,8 @@ class MathParseContext:
             self.populate_symbols(objast['Compare']['left'])
             for s in objast['Compare']['comparators']:
                 self.populate_symbols(s)
+        elif 'Pass' in objast:
+            pass
         else:
             raise ValueError(objast)
 
