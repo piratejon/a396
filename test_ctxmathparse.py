@@ -248,6 +248,21 @@ a = b * c
         self.assertEqual(mathparse.context.modified_symbols, set({'a', 'c'}))
         self.assertEqual(mathparse.context.symbols, set({'a', 'b', 'c'}))
 
+        f = """
+a = 99
+if b > 75:
+    c += 99
+elif b > 60:
+    c += 50
+else:
+    c += 25
+a += c
+"""
+        mathparse = ctxmathparse.MathParse()
+        mathparse.context_parse_string(f)
+        self.assertEqual(mathparse.context.modified_symbols, set({'a', 'c'}))
+        self.assertEqual(mathparse.context.symbols, set({'a', 'b', 'c'}))
+
 if __name__ == '__main__':
     unittest.main()
 

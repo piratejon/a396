@@ -137,6 +137,11 @@ class MathParseContext:
         elif 'Assign' in objast:
             for s in objast['Assign']['targets']:
                 self.populate_modified_symbols(s)
+        elif 'If' in objast:
+            for s in objast['If']['body']:
+                self.populate_modified_symbols(s)
+            for s in objast['If']['orelse']:
+                self.populate_modified_symbols(s)
         else:
             raise ValueError(objast.keys())
 
@@ -161,6 +166,16 @@ class MathParseContext:
         elif 'BinOp' in objast:
             self.populate_symbols(objast['BinOp']['left'])
             self.populate_symbols(objast['BinOp']['right'])
+        elif 'If' in objast:
+            for s in objast['If']['body']:
+                self.populate_symbols(s)
+            self.populate_symbols(objast['If']['test'])
+            for s in objast['If']['orelse']:
+                self.populate_symbols(s)
+        elif 'Compare' in objast:
+            self.populate_symbols(objast['Compare']['left'])
+            for s in objast['Compare']['comparators']:
+                self.populate_symbols(s)
         else:
             raise ValueError(objast)
 
