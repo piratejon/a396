@@ -144,6 +144,10 @@ class MathParseContext:
                 self.populate_modified_symbols(s)
         elif 'Pass' in objast:
             pass
+        elif 'FunctionDef' in objast:
+            pass
+        elif 'Return' in objast:
+            pass
         else:
             raise ValueError(objast.keys())
 
@@ -180,8 +184,13 @@ class MathParseContext:
                 self.populate_symbols(s)
         elif 'Pass' in objast:
             pass
+        elif 'Return' in objast:
+            self.populate_symbols(objast['Return']['value'])
         else:
             raise ValueError(objast)
+
+    def populate_returns(self):
+        pass
 
 class MathParseFunction:
     """
@@ -287,10 +296,44 @@ class MathParse:
         self.objast = objectify_string(mathstr)
         self.context.populate_modified_symbols(self.objast)
         self.context.populate_symbols(self.objast)
+        self.context.populate_returns(self.objast)
 
     def parse_string(self, mathstr):
         """Consume a string, keeping a source copy and storing its objast."""
         self.source = mathstr
         self.objast = objectify_string(mathstr)
         self.function_list = functions_from_ast(self.objast)
+
+class SymbolSeekerVisitor(ast.NodeVisitor):
+    """Find symbols in the AST."""
+    def __init__(self, symbol_catcher):
+        self.symbol_catcher = symbol_catcher
+
+    def visit_Name(self, node):
+        self.symbol_catcher(node.id)
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        self.symbol_catcher(node.name)
+        self.generic_visit(node)
+
+    def visit_arg(self, node):
+        self.symbol_catcher(node.arg)
+        self.generic_visit(node)
+
+class ASTMathParse:
+    """Translate on the normal AST not an objast."""
+
+    def find_symbols(self):
+        """Visit all the nodes in the AST finding symbols referenced."""
+        symbols = set()
+        ssv = SymbolSeekerVisitor(symbols.add)
+        ssv.visit(self.ast)
+        return symbols
+
+    def parse_string(self, mathstr):
+        """Fill state from the AST of mathstr."""
+        self.src = mathstr
+        self.ast = ast.parse(mathstr)
+        self.symbols = self.find_symbols()
 

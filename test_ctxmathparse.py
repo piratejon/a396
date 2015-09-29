@@ -16,66 +16,6 @@ class TestMathParse(unittest.TestCase):
         self.assertEqual(mpctx.source, '')
         self.assertEqual(mpctx.objast, None)
 
-    def test_objectify_ast(self):
-        f = """
-def f1(x):
-    return x + 9
-"""
-        self.assertEqual(ctxmathparse.objectify_string(f), {
-                "Module": {
-                    "body": [
-                        {
-                            "FunctionDef": {
-                                "name": "f1",
-                                "returns": None,
-                                "decorator_list": [],
-                                "args": {
-                                    "arguments": {
-                                        "args": [
-                                            {
-                                                "arg": {
-                                                    "arg": "x",
-                                                    "annotation": None,
-                                                }
-                                            }
-                                        ], "kw_defaults": [],
-                                        "defaults": [],
-                                        "kwarg": None,
-                                        "kwonlyargs": [],
-                                        "vararg": None
-                                    }
-                                }, "body": [
-                                    {
-                                        "Return": {
-                                            "value": {
-                                                "BinOp": {
-                                                    "left": {
-                                                        "Name": {
-                                                            "ctx": {
-                                                                "Load": {}
-                                                            }, "id": "x"
-                                                        }
-                                                    },
-                                                    "op": {
-                                                        "Add": { }
-                                                    },
-                                                    "right": {
-                                                        "Num": {
-                                                            "n": 9
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }
-        )
-
     def test_add_function_to_context(self):
         f = """
 def f1(x):
@@ -264,6 +204,30 @@ a += c
         mathparse.context_parse_string(f)
         self.assertEqual(mathparse.context.modified_symbols, set({'a', 'c'}))
         self.assertEqual(mathparse.context.symbols, set({'a', 'b', 'c', 'd'}))
+
+    def test_find_returns(self):
+        f = """
+return x + 5
+"""
+        mathparse = ctxmathparse.MathParse()
+        mathparse.context_parse_string(f)
+        returns = mathparse.context_returns()
+        self.assertEqual(len(returns), 1)
+        self.assertEqual(returns, {
+                "_f1:return:0": "([_f1:x] + 5)"
+            }
+        )
+
+    def test_find_symbols_in_normal_ast(self):
+        f = "return x + 5"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(mathparse.symbols, set('x'))
+
+        f = "def lalala(x, y, z): return x + y"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(mathparse.symbols, set({'lalala', 'x', 'y', 'z'}))
 
 if __name__ == '__main__':
     unittest.main()
