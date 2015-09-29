@@ -321,8 +321,27 @@ class SymbolSeekerVisitor(ast.NodeVisitor):
         self.symbol_catcher(node.arg)
         self.generic_visit(node)
 
+class TargetSymbolSeekerVisitor(ast.NodeVisitor):
+    """Find target symbols in the AST."""
+    def __init__(self, symbol_catcher):
+        self.symbol_catcher = symbol_catcher
+
+    def visit_Assign(self, node):
+        for t in node.targets:
+            try:
+                self.symbol_catcher(t.id)
+            except AttributeError:
+                pass
+
 class ASTMathParse:
     """Translate on the normal AST not an objast."""
+
+    def __init__(self):
+        """Initialize our instance variables."""
+        self.src = ""
+        self.ast = None
+        self.symbols = set()
+        self.target_symbols = set()
 
     def find_symbols(self):
         """Visit all the nodes in the AST finding symbols referenced."""
@@ -331,9 +350,16 @@ class ASTMathParse:
         ssv.visit(self.ast)
         return symbols
 
+    def find_target_symbols(self):
+        symbols = set()
+        tssv = TargetSymbolSeekerVisitor(symbols.add)
+        tssv.visit(self.ast)
+        return symbols
+
     def parse_string(self, mathstr):
         """Fill state from the AST of mathstr."""
         self.src = mathstr
         self.ast = ast.parse(mathstr)
         self.symbols = self.find_symbols()
+        self.target_symbols = self.find_target_symbols()
 

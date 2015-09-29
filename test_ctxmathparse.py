@@ -229,6 +229,25 @@ return x + 5
         mathparse.parse_string(f)
         self.assertEqual(mathparse.symbols, set({'lalala', 'x', 'y', 'z'}))
 
+    def test_find_modified_symbols(self):
+        f = "return x + 5"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(mathparse.symbols, set('x'))
+        self.assertEqual(mathparse.target_symbols, set())
+
+        f = "x = 5\na = x"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(mathparse.symbols, set({'a', 'x'}))
+        self.assertEqual(mathparse.target_symbols, set({'a', 'x'}))
+
+        f = "x = 5 + b\nc = b * x"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(mathparse.symbols, set({'x', 'b', 'c'}))
+        self.assertEqual(mathparse.target_symbols, set({'x', 'c'}))
+
 if __name__ == '__main__':
     unittest.main()
 
