@@ -364,7 +364,7 @@ class RenderVisitor():
 
 def translate_ast_expression(ast_expr):
     """Translate one expression and generate any formulas."""
-    symbols = set()
+    symbols = {}
     ssv = SymbolSeekerVisitor(symbols.add)
     ssv.visit(ast_expr)
     formulae = {}
@@ -375,14 +375,20 @@ def translate_ast_expression(ast_expr):
 class ASTMathParse:
     """Translate on the normal AST not an objast."""
 
-    def __init__(self, context_name='_'):
+    def __init__(self, context_name='_', parent=None):
         """Initialize our instance variables."""
         self.src = ""
         self.ast = None
         self.symbols = set()
         self.target_symbols = set()
+        self.statements = []
+
         self.symbol_table = {}
         self.context_name = context_name
+        self.qualified_context_name = '{}:{}'.format(
+            parent.qualified_context_name, context_name
+        ) if parent else context_name
+        self.parent = parent
 
     def find_symbols(self):
         """Visit all the nodes in the AST finding symbols referenced."""
@@ -406,6 +412,7 @@ class ASTMathParse:
         self.ast = ast.parse(mathstr)
         self.symbols = self.find_symbols()
         self.target_symbols = self.find_target_symbols()
+        self.statements = self.ast.body
 
     def define_symbol(self, symboldef):
         """Add a symbol to the symbol table."""
@@ -415,4 +422,15 @@ class ASTMathParse:
         """Translate one expression in context."""
         rv = RenderVisitor(self.symbol_table, self.context_name)
         return rv.visit(ast.parse(mathstr).body[0])
+
+    def create_child_context(self, name):
+        return ASTMathParse(name, self)
+
+    def resolve_symbol(self, symbol):
+        if symbol in self.symbols:
+            return '_{}:{}'.format(self.qualified_context_name, symbol)
+        elif self.parent is not None:
+            return self.parent.resolve_symbol(symbol)
+        else:
+            raise KeyError(symbol)
 

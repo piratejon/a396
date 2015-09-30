@@ -209,6 +209,7 @@ a += c
         f = """
 return x + 5
 """
+        return
         mathparse = ctxmathparse.MathParse()
         mathparse.context_parse_string(f)
         returns = mathparse.context_returns()
@@ -264,16 +265,25 @@ return x + 5
         mathparse.define_symbol({'x': 'x'})
         self.assertEqual(mathparse.translate_expression('x+5'), '([_x] + 5)')
 
-    def test_translate_simple_expression(self):
-        return
-        f = "x + 5"
+    def test_bind_symbols_in_context(self):
+        ctx0 = ctxmathparse.ASTMathParse('ctx0')
+        ctx0.symbols.add('a')
+        ctx1 = ctx0.create_child_context('ctx1')
+        ctx1.symbols.add('b')
+        self.assertEqual(ctx0.qualified_context_name, 'ctx0')
+        self.assertEqual(ctx1.qualified_context_name, 'ctx0:ctx1')
+        self.assertEqual(ctx0.resolve_symbol('a'), '_ctx0:a')
+        self.assertEqual(ctx1.resolve_symbol('a'), '_ctx0:a')
+        self.assertEqual(ctx1.resolve_symbol('b'), '_ctx0:ctx1:b')
+        with self.assertRaises(KeyError):
+            ctx0.resolve_symbol('b')
+
+    def test_separate_out_statements(self):
         mathparse = ctxmathparse.ASTMathParse()
-        mathparse.parse_string(f)
-        self.assertEqual(ctxmathparse.translate_ast_expression(mathparse.ast.body[0]), {
-                "_x": "x",
-                "_stmt_0": "([_x] + 5)"
-            }
-        )
+        mathparse.parse_string("x + 5")
+        self.assertEqual(len(mathparse.statements), 1)
+        mathparse.parse_string("x + 5\ny + 150 * 99\ninvoke_a_thingy(99 * y, x/y)")
+        self.assertEqual(len(mathparse.statements), 3)
 
 if __name__ == '__main__':
     unittest.main()
