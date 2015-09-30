@@ -333,15 +333,56 @@ class TargetSymbolSeekerVisitor(ast.NodeVisitor):
             except AttributeError:
                 pass
 
+class RenderVisitor():
+    """Run through the tree, returning a string formula."""
+
+    def __init__(self, symbol_defs, context_name='_'):
+        self.symbol_defs = symbol_defs
+        self.context_name = context_name
+
+    def visit(self, node):
+        return (getattr(self, 'visit_' + node.__class__.__name__))(node)
+
+    def visit_Expr(self, node):
+        return self.visit(node.value)
+
+    def visit_BinOp(self, node):
+        return '({} {} {})'.format(
+            self.visit(node.left),
+            self.visit(node.op),
+            self.visit(node.right)
+        )
+
+    def visit_Name(self, node):
+        return '[{}{}]'.format(self.context_name, self.symbol_defs[node.id])
+
+    def visit_Add(self, node):
+        return '+'
+
+    def visit_Num(self, node):
+        return node.n
+
+def translate_ast_expression(ast_expr):
+    """Translate one expression and generate any formulas."""
+    symbols = set()
+    ssv = SymbolSeekerVisitor(symbols.add)
+    ssv.visit(ast_expr)
+    formulae = {}
+    rv = RenderVisitor(symbols)
+    formulae.update({'_stmt_0': rv.visit(ast_expr)})
+    return formulae
+
 class ASTMathParse:
     """Translate on the normal AST not an objast."""
 
-    def __init__(self):
+    def __init__(self, context_name='_'):
         """Initialize our instance variables."""
         self.src = ""
         self.ast = None
         self.symbols = set()
         self.target_symbols = set()
+        self.symbol_table = {}
+        self.context_name = context_name
 
     def find_symbols(self):
         """Visit all the nodes in the AST finding symbols referenced."""
@@ -356,10 +397,22 @@ class ASTMathParse:
         tssv.visit(self.ast)
         return symbols
 
+    def export_symbols(self):
+        return {'_' + a for a in self.symbols}
+
     def parse_string(self, mathstr):
         """Fill state from the AST of mathstr."""
         self.src = mathstr
         self.ast = ast.parse(mathstr)
         self.symbols = self.find_symbols()
         self.target_symbols = self.find_target_symbols()
+
+    def define_symbol(self, symboldef):
+        """Add a symbol to the symbol table."""
+        self.symbol_table.update(symboldef)
+
+    def translate_expression(self, mathstr):
+        """Translate one expression in context."""
+        rv = RenderVisitor(self.symbol_table, self.context_name)
+        return rv.visit(ast.parse(mathstr).body[0])
 

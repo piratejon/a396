@@ -248,6 +248,33 @@ return x + 5
         self.assertEqual(mathparse.symbols, set({'x', 'b', 'c'}))
         self.assertEqual(mathparse.target_symbols, set({'x', 'c'}))
 
+    def test_imbue_symbols_with_context(self):
+        f = "x, y, z"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(mathparse.symbols, set({'x', 'y', 'z'}))
+        self.assertEqual(mathparse.export_symbols(), set({'_x', '_y', '_z'}))
+
+    def test_substitute_in_symbol_context(self):
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.define_symbol({"x": "stmt_x_0"})
+        self.assertEqual(mathparse.translate_expression("x+5"), "([_stmt_x_0] + 5)")
+
+        mathparse = ctxmathparse.ASTMathParse('_')
+        mathparse.define_symbol({'x': 'x'})
+        self.assertEqual(mathparse.translate_expression('x+5'), '([_x] + 5)')
+
+    def test_translate_simple_expression(self):
+        return
+        f = "x + 5"
+        mathparse = ctxmathparse.ASTMathParse()
+        mathparse.parse_string(f)
+        self.assertEqual(ctxmathparse.translate_ast_expression(mathparse.ast.body[0]), {
+                "_x": "x",
+                "_stmt_0": "([_x] + 5)"
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
