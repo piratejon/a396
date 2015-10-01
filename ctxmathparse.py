@@ -418,19 +418,33 @@ class ASTMathParse:
         """Add a symbol to the symbol table."""
         self.symbol_table.update(symboldef)
 
-    def translate_expression(self, mathstr):
-        """Translate one expression in context."""
+    def translate_expression_string(self, mathstr):
+        """Translate the first statement in a string."""
         rv = RenderVisitor(self.symbol_table, self.context_name)
         return rv.visit(ast.parse(mathstr).body[0])
 
+    def translate_expression(self, expr):
+        """Translate an expression in context."""
+        rv = RenderVisitor(self.symbol_table, self.context_name)
+        return rv.visit(expr)
+
     def create_child_context(self, name):
+        """Create a child context with given name and self as parent."""
         return ASTMathParse(name, self)
 
     def resolve_symbol(self, symbol):
+        """Look up the symbol in the chain of contexts and return its qualified name."""
         if symbol in self.symbols:
             return '_{}:{}'.format(self.qualified_context_name, symbol)
         elif self.parent is not None:
             return self.parent.resolve_symbol(symbol)
         else:
             raise KeyError(symbol)
+
+    def translate_statements(self):
+        """Translate whatever is in our statement list."""
+        return {
+            "_{}:stmt{}".format(self.qualified_context_name, i): self.translate_expression(stmt)
+            for i, stmt in enumerate(self.statements)
+        }
 

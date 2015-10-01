@@ -285,6 +285,14 @@ return x + 5
         mathparse.parse_string("x + 5\ny + 150 * 99\ninvoke_a_thingy(99 * y, x/y)")
         self.assertEqual(len(mathparse.statements), 3)
 
+    def test_translate_one_statement(self):
+        mathparse = ctxmathparse.ASTMathParse('s')
+        mathparse.parse_string("x + 5")
+        self.assertEqual(mathparse.translate_statements(), {
+                "_s:stmt_0": "([_s:x] + 5)",
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
