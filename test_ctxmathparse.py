@@ -256,15 +256,6 @@ return x + 5
         self.assertEqual(mathparse.symbols, set({'x', 'y', 'z'}))
         self.assertEqual(mathparse.export_symbols(), set({'_x', '_y', '_z'}))
 
-    def test_substitute_in_symbol_context(self):
-        mathparse = ctxmathparse.ASTMathParse()
-        mathparse.define_symbol({"x": "stmt_x_0"})
-        self.assertEqual(mathparse.translate_expression("x+5"), "([_stmt_x_0] + 5)")
-
-        mathparse = ctxmathparse.ASTMathParse('_')
-        mathparse.define_symbol({'x': 'x'})
-        self.assertEqual(mathparse.translate_expression('x+5'), '([_x] + 5)')
-
     def test_bind_symbols_in_context(self):
         ctx0 = ctxmathparse.ASTMathParse('ctx0')
         ctx0.symbols.add('a')
@@ -285,11 +276,20 @@ return x + 5
         mathparse.parse_string("x + 5\ny + 150 * 99\ninvoke_a_thingy(99 * y, x/y)")
         self.assertEqual(len(mathparse.statements), 3)
 
+    def test_define_statement_symbols(self):
+        mathparse = ctxmathparse.ASTMathParse('s')
+        mathparse.parse_string('x + 5')
+        self.assertEqual(mathparse.symbol_table, {
+                'x': '_s:x'
+            }
+        )
+
     def test_translate_one_statement(self):
         mathparse = ctxmathparse.ASTMathParse('s')
         mathparse.parse_string("x + 5")
+        self.assertEqual(mathparse.symbols, set({'x'}))
         self.assertEqual(mathparse.translate_statements(), {
-                "_s:stmt_0": "([_s:x] + 5)",
+                "_s:stmt0": "([_s:x] + 5)",
             }
         )
 

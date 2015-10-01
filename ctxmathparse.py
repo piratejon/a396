@@ -354,7 +354,7 @@ class RenderVisitor():
         )
 
     def visit_Name(self, node):
-        return '[{}{}]'.format(self.context_name, self.symbol_defs[node.id])
+        return '[{}]'.format(self.symbol_defs[node.id])
 
     def visit_Add(self, node):
         return '+'
@@ -406,6 +406,12 @@ class ASTMathParse:
     def export_symbols(self):
         return {'_' + a for a in self.symbols}
 
+    def define_symbols(self, symbols):
+        """Determine the symbol table mapping for the symbols in their contexts."""
+        return {
+            symbol: self.resolve_symbol(symbol) for symbol in symbols
+        }
+
     def parse_string(self, mathstr):
         """Fill state from the AST of mathstr."""
         self.src = mathstr
@@ -413,15 +419,11 @@ class ASTMathParse:
         self.symbols = self.find_symbols()
         self.target_symbols = self.find_target_symbols()
         self.statements = self.ast.body
+        self.symbol_table = self.define_symbols(self.symbols)
 
     def define_symbol(self, symboldef):
         """Add a symbol to the symbol table."""
         self.symbol_table.update(symboldef)
-
-    def translate_expression_string(self, mathstr):
-        """Translate the first statement in a string."""
-        rv = RenderVisitor(self.symbol_table, self.context_name)
-        return rv.visit(ast.parse(mathstr).body[0])
 
     def translate_expression(self, expr):
         """Translate an expression in context."""
