@@ -302,6 +302,15 @@ return x + 5
             }
         )
 
+    def test_translate_assignment_statement(self):
+        mathparse = ctxmathparse.ASTMathParse('t')
+        mathparse.parse_string('x = 99 * b')
+        self.assertEqual(mathparse.translate_statements(), {
+                '_t:stmt0': '(99 * [_t:b])',
+                '_t:x': '[_t:stmt0]'
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 

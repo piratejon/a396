@@ -448,8 +448,19 @@ class ASTMathParse:
 
     def translate_statements(self):
         """Translate whatever is in our statement list."""
-        return {
-            "_{}:stmt{}".format(self.qualified_context_name, i): self.translate_expression(stmt)
-            for i, stmt in enumerate(self.statements)
-        }
+        stmts = {}
+        for i, stmt in enumerate(self.statements):
+            stmt_name = '_{}:stmt{}'.format(self.qualified_context_name, i)
+            stmts.update({
+                    stmt_name: self.translate_expression(stmt.value)
+                }
+            )
+
+            if isinstance(stmt, ast.Assign):
+                stmts.update({
+                        self.resolve_symbol(stmt.targets[0].id): '[{}]'.format(stmt_name)
+                    }
+                )
+
+        return stmts
 
