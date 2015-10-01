@@ -349,15 +349,18 @@ class RenderVisitor():
     def visit_BinOp(self, node):
         return '({} {} {})'.format(
             self.visit(node.left),
-            self.visit(node.op),
+            self.decode_binop(node.op),
             self.visit(node.right)
         )
 
     def visit_Name(self, node):
         return '[{}]'.format(self.symbol_defs[node.id])
 
-    def visit_Add(self, node):
-        return '+'
+    def decode_binop(self, node_op):
+        return {
+            'Add': '+',
+            'Mult': '*'
+        }[node_op.__class__.__name__]
 
     def visit_Num(self, node):
         return node.n

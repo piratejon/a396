@@ -293,6 +293,15 @@ return x + 5
             }
         )
 
+    def test_translate_two_statements(self):
+        mathparse = ctxmathparse.ASTMathParse('t')
+        mathparse.parse_string('x + 5\ny * 9')
+        self.assertEqual(mathparse.translate_statements(), {
+                '_t:stmt0': '([_t:x] + 5)',
+                '_t:stmt1': '([_t:y] * 9)'
+            }
+        )
+
 if __name__ == '__main__':
     unittest.main()
 
