@@ -236,7 +236,7 @@ def f1(z):
             }
         )
 
-    def test_pushes_a_statement_down(self):
+    def test_pushes_a_statement_down_1(self):
         """
           This test illustrates the transformation from
 
@@ -349,18 +349,31 @@ def f1(z):
 
     def test_pushes_a_statement_down(self):
         f = """
-def f1(z):
-    x = 19*z
-    return sqrt(x)
+def f1(z0):
+    x = z0
+    return x
 """
         mp = mathparse.MathParse()
         self.assertEqual(mp.mathparse_string(f), {
-                "_f1#z": "z",
-                "_f1.x": "(19 * [_f1#z])",
-                "_f1": "sqrt([_f1.x])"
+                "_f1#z0": "z0",
+                "_f1.x": "[_f1#z0]",
+                "_f1": "[_f1.x]"
             }
         )
 
+#        f = """
+#def f1(z0):
+#    x = 19*z0
+#    return sqrt(x)
+#"""
+#        mp = mathparse.MathParse()
+#        self.assertEqual(mp.mathparse_string(f), {
+#                "_f1#z0": "z0",
+#                "_f1.x": "(19 * [_f1#z0])",
+#                "_f1": "sqrt([_f1.x])"
+#            }
+#        )
+#
     def test_overwrites_parameters(self):
         f = """
 def f1(z):
