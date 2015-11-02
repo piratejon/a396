@@ -8,7 +8,7 @@ def objectify_node(node):
     """Get the tree into a friendly manipulable format we can easily
       compare in unit tests and does not have line/col info not needed
       here"""
-    if node == None:
+    if node is None:
         return None
 
     elif isinstance(node, int) or isinstance(node, str):
@@ -94,103 +94,103 @@ def invert_dict(swap_me):
     """Swap each key -> value pair in a dictionary."""
     return {v: k for k, v in swap_me.items()}
 
-class MathParseContext:
-    """
-        Encapsulate the state associated with a single context.
-    """
-
-    def __init__(self, name, parent = None):
-        """Initialize the context's name."""
-        self.name = name
-        self.parent = parent
-        self.symbols = set()
-        self.modified_symbols = set()
-
-    def translate_symbol(self, symbol):
-        """Seek the symbol in the context or parent context and return its Tableau name."""
-        if symbol in self.symbols:
-            return '_{}:{}'.format(self.name, symbol)
-        elif self.parent is not None:
-            return self.parent.translate_symbol(symbol)
-        else:
-            raise ValueError(symbol)
-
-    def create_child_context(self, name):
-        """Return a new context with this context as the parent and the appropriate name."""
-        return MathParseContext("{}:{}".format(self.name, name), self)
-
-    def add_symbol(self, symbol):
-        """Add a symbol to the context."""
-        self.symbols.add(symbol)
-
-    def populate_modified_symbols(self, objast):
-        """Find out which symbols are modified in this objast."""
-        if 'Module' in objast:
-            self.populate_modified_symbols(objast['Module'])
-        elif 'body' in objast:
-            for b in objast['body']:
-                self.populate_modified_symbols(b)
-        elif 'AugAssign' in objast:
-            self.populate_modified_symbols(objast['AugAssign']['target'])
-        elif 'Name' in objast:
-            self.modified_symbols.add(objast['Name']['id'])
-        elif 'Assign' in objast:
-            for s in objast['Assign']['targets']:
-                self.populate_modified_symbols(s)
-        elif 'If' in objast:
-            for s in objast['If']['body']:
-                self.populate_modified_symbols(s)
-            for s in objast['If']['orelse']:
-                self.populate_modified_symbols(s)
-        elif 'Pass' in objast:
-            pass
-        elif 'FunctionDef' in objast:
-            pass
-        elif 'Return' in objast:
-            pass
-        else:
-            raise ValueError(objast.keys())
-
-    def populate_symbols(self, objast):
-        """Find all symbols mentioned in this objast."""
-        if 'Module' in objast:
-            self.populate_symbols(objast['Module'])
-        elif 'body' in objast:
-            for b in objast['body']:
-                self.populate_symbols(b)
-        elif 'AugAssign' in objast:
-            self.populate_symbols(objast['AugAssign']['target'])
-            self.populate_symbols(objast['AugAssign']['value'])
-        elif 'Name' in objast:
-            self.symbols.add(objast['Name']['id'])
-        elif 'Assign' in objast:
-            for s in objast['Assign']['targets']:
-                self.populate_symbols(s)
-            self.populate_symbols(objast['Assign']['value'])
-        elif 'Num' in objast:
-            pass
-        elif 'BinOp' in objast:
-            self.populate_symbols(objast['BinOp']['left'])
-            self.populate_symbols(objast['BinOp']['right'])
-        elif 'If' in objast:
-            for s in objast['If']['body']:
-                self.populate_symbols(s)
-            self.populate_symbols(objast['If']['test'])
-            for s in objast['If']['orelse']:
-                self.populate_symbols(s)
-        elif 'Compare' in objast:
-            self.populate_symbols(objast['Compare']['left'])
-            for s in objast['Compare']['comparators']:
-                self.populate_symbols(s)
-        elif 'Pass' in objast:
-            pass
-        elif 'Return' in objast:
-            self.populate_symbols(objast['Return']['value'])
-        else:
-            raise ValueError(objast)
-
-    def populate_returns(self):
-        pass
+#class MathParseContext:
+#    """
+#        Encapsulate the state associated with a single context.
+#    """
+#
+#    def __init__(self, name, parent=None):
+#        """Initialize the context's name."""
+#        self.name = name
+#        self.parent = parent
+#        self.symbols = set()
+#        self.modified_symbols = set()
+#
+#    def translate_symbol(self, symbol):
+#        """Seek the symbol in the context or parent context and return its Tableau name."""
+#        if symbol in self.symbols:
+#            return '_{}:{}'.format(self.name, symbol)
+#        elif self.parent is not None:
+#            return self.parent.translate_symbol(symbol)
+#        else:
+#            raise ValueError(symbol)
+#
+#    def create_child_context(self, name):
+#        """Return a new context with this context as the parent and the appropriate name."""
+#        return MathParseContext("{}:{}".format(self.name, name), self)
+#
+#    def add_symbol(self, symbol):
+#        """Add a symbol to the context."""
+#        self.symbols.add(symbol)
+#
+#    def populate_modified_symbols(self, objast):
+#        """Find out which symbols are modified in this objast."""
+#        if 'Module' in objast:
+#            self.populate_modified_symbols(objast['Module'])
+#        elif 'body' in objast:
+#            for stmt in objast['body']:
+#                self.populate_modified_symbols(stmt)
+#        elif 'AugAssign' in objast:
+#            self.populate_modified_symbols(objast['AugAssign']['target'])
+#        elif 'Name' in objast:
+#            self.modified_symbols.add(objast['Name']['id'])
+#        elif 'Assign' in objast:
+#            for symbol in objast['Assign']['targets']:
+#                self.populate_modified_symbols(symbol)
+#        elif 'If' in objast:
+#            for stmt in objast['If']['body']:
+#                self.populate_modified_symbols(stmt)
+#            for stmt in objast['If']['orelse']:
+#                self.populate_modified_symbols(stmt)
+#        elif 'Pass' in objast:
+#            pass
+#        elif 'FunctionDef' in objast:
+#            pass
+#        elif 'Return' in objast:
+#            pass
+#        else:
+#            raise ValueError(objast.keys())
+#
+#    def populate_symbols(self, objast):
+#        """Find all symbols mentioned in this objast."""
+#        if 'Module' in objast:
+#            self.populate_symbols(objast['Module'])
+#        elif 'body' in objast:
+#            for stmt in objast['body']:
+#                self.populate_symbols(stmt)
+#        elif 'AugAssign' in objast:
+#            self.populate_symbols(objast['AugAssign']['target'])
+#            self.populate_symbols(objast['AugAssign']['value'])
+#        elif 'Name' in objast:
+#            self.symbols.add(objast['Name']['id'])
+#        elif 'Assign' in objast:
+#            for stmt in objast['Assign']['targets']:
+#                self.populate_symbols(stmt)
+#            self.populate_symbols(objast['Assign']['value'])
+#        elif 'Num' in objast:
+#            pass
+#        elif 'BinOp' in objast:
+#            self.populate_symbols(objast['BinOp']['left'])
+#            self.populate_symbols(objast['BinOp']['right'])
+#        elif 'If' in objast:
+#            for stmt in objast['If']['body']:
+#                self.populate_symbols(stmt)
+#            self.populate_symbols(objast['If']['test'])
+#            for stmt in objast['If']['orelse']:
+#                self.populate_symbols(stmt)
+#        elif 'Compare' in objast:
+#            self.populate_symbols(objast['Compare']['left'])
+#            for expr in objast['Compare']['comparators']:
+#                self.populate_symbols(expr)
+#        elif 'Pass' in objast:
+#            pass
+#        elif 'Return' in objast:
+#            self.populate_symbols(objast['Return']['value'])
+#        else:
+#            raise ValueError(objast)
+#
+#    def populate_returns(self):
+#        pass
 
 class MathParseFunction:
     """
@@ -340,7 +340,7 @@ class SubstituteVisitor(ast.NodeTransformer):
         self.value = value
         self.left = False
 
-class RenderVisitor():
+class RenderVisitor(ast.NodeVisitor):
     """Run through the tree, returning a string formula."""
 
     def __init__(self, symbol_defs, context_name='_'):
@@ -458,13 +458,15 @@ class ASTMathParse:
         stmts = {}
         for i, stmt in enumerate(self.statements):
             stmt_name = '_{}:stmt{}'.format(self.qualified_context_name, i)
-            stmts.update({
+            stmts.update(
+                {
                     stmt_name: self.translate_expression(stmt.value)
                 }
             )
 
             if isinstance(stmt, ast.Assign):
-                stmts.update({
+                stmts.update(
+                    {
                         self.resolve_symbol(stmt.targets[0].id): '[{}]'.format(stmt_name)
                     }
                 )
@@ -499,4 +501,7 @@ class ASTMathParse:
 
         new_thing = {symbol: self.versioned_symbol(symbol)}
         self.symbols.update(new_thing)
+
+    def find_bound_variables(self, myast, ctx={}):
+        """Identify the free variables in an assignment RHS."""
 

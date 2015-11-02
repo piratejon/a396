@@ -1,42 +1,96 @@
 #!/usr/bin/python3
 
-"""Implementation of mathparse class"""
+"""Implementation of MathParse class"""
 
-import copy # deepcopy function ast for clone
-import sys
+import types
 import ast
 
-def fetch_args(args):
-    """Return an ordered list of function arguments from an ast.Arg list."""
-    return [arg.arg for arg in args if arg.arg != 'self']
+class YieldingVisitor:
+    """YieldingVisitor implements an AST visitor which returns values through yield."""
 
-def make_arg_local_name(funcname, symbol, tag = ''):
-    """Return the name of the variable assigned to a function's argument or local."""
-    return '{}_{}_{}'.format(funcname, tag, symbol)
+    @classmethod
+    def evaluate_generated_values(cls, generator):
+        """Flattens the generator of generators."""
+        if isinstance(generator, types.GeneratorType) and not isinstance(generator, str):
+            for gen in generator:
+                yield from cls.evaluate_generated_values(gen)
+        else:
+            yield generator
 
-def build_arg_lookup(funcname, symbols):
-    """Build the lookup table for translated symbol names given a list of symbols."""
-    return {symbol: make_arg_local_name(funcname, symbol, 'arg') for symbol in symbols}
+    @classmethod
+    def find_symbols(cls, expr):
+        """Sponge the generated symbols into a result."""
+        return set(
+            symbol for symbol in cls.evaluate_generated_values(
+                cls.visit(expr)
+            )
+        )
 
-def get_last_statement(func):
-    """temporary last-statement-retriever; replaced when we start collecting all statements"""
-    return func.body[-1]
+    @classmethod
+    def visit(cls, node):
+        """Visit the nodes."""
+        yield (
+            getattr(cls, 'visit_' + node.__class__.__name__.lower(), cls.generic_visit)
+        )(node)
 
-def build_func_table(body):
-    """Build lookup for top-level functions defined in this statement list."""
-    return {body[i].name: body[i] for i in range(len(body))}
+    @classmethod
+    def generic_visit(cls, node):
+        """
+            The node does not have a special handler so make sure to visit its children.
+            Adapted from:
+            <http://svn.python.org/projects/python/branches/release26-maint/Lib/ast.py>
+            Visited 2015-11-01.
+        """
+        if isinstance(node, ast.AST):
+            for _, value in ast.iter_fields(node):
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, ast.AST):
+                            yield cls.visit(item)
+                elif isinstance(value, ast.AST):
+                    yield cls.visit(value)
+        else:
+            try:
+                iterator = iter(node)
+            except TypeError as te:
+                pass
+            else:
+                for item in iterator:
+                    yield cls.visit(item)
 
-def clone_function_in_statement(stmt, func):
-    """Create a deep copy of an ast.Function for duplicating where required by a distinct invocation."""
-    func = copy.deepcopy(func)
-    func.name = '{}_l{}_c{}'.format(func.name, stmt.lineno, stmt.col_offset)
-    return func
+class SymbolFinderVisitor(YieldingVisitor):
+    """Traverse an AST expression for symbols."""
 
-def make_function_name(func):
-    return '_{}'.format(func.name)
+    @staticmethod
+    def visit_name(node):
+        """Fetch the symbol from a name node."""
+        yield node.id
 
-def make_statement_name(func, stmt):
-    return '_{}_l{}_c{}'.format(func.name, stmt.lineno, stmt.col_offset)
+    @classmethod
+    def visit_call(cls, node):
+        """Skip function names but look at argument lists."""
+        yield cls.visit(node.args)
+
+class StaticMathParse:
+    """StaticMathParse holds testable stateless functions used in a MathParse context."""
+
+    @staticmethod
+    def unwrap_module_statements(module):
+        """Given an ast.Module, return the top-level statements in its body."""
+        for stmt in module.body:
+            yield stmt
+
+    @staticmethod
+    def find_rhs_symbols(stmt):
+        """Given an ast.Statement, return symbols in the right-hand side."""
+        symbol_finder = SymbolFinderVisitor()
+        return symbol_finder.find_symbols(stmt.value)
+
+    @staticmethod
+    def find_lhs_symbols(stmt):
+        """Given an ast.Statement, return symbols from the left-hand side."""
+        symbol_finder = SymbolFinderVisitor()
+        return symbol_finder.find_symbols(stmt.targets[0])
 
 class MathParse:
     """MathParse turns Python functions into Tableau calculations.
@@ -81,192 +135,6 @@ class MathParse:
     """
 
     def __init__(self):
-        """Initialize this instance's translated formulae"""
+        """Initialize instance variables for this context."""
         self.formulae = {}
-        self.args = {}
-
-    def objectify_node(self, node):
-        """Get the tree into a friendly manipulable format we can easily
-          compare in unit tests and does not have line/col info not needed
-          here"""
-        if node == None:
-            return None
-        elif isinstance(node, int) or isinstance(node, str):
-            return node
-        elif isinstance(node, list):
-            return [
-                self.objectify_node(node[i]) for i in range(len(node))
-            ]
-        else: # i hope this is an object!
-            return {
-                node.__class__.__name__: {
-                    fieldname: self.objectify_node(getattr(node, fieldname))
-                        for fieldname in node._fields
-                }
-            }
-
-    def push_it_down(self, orig_tree):
-        tree = copy.deepcopy(orig_tree)
-        symbol = tree['Module']['body'][0]['FunctionDef']['body'][0]['Assign']['targets'][0]['Name']['id']
-        value = tree['Module']['body'][0]['FunctionDef']['body'][0]['Assign']['value']
-        tree['Module']['body'][0]['FunctionDef']['body'][1]['Return']['value']['Call']['args'][0] = value
-        del tree['Module']['body'][0]['FunctionDef']['body'][0]
-        return tree
- 
-    def abstractify_tree(self, tree):
-        return self.objectify_node(tree)
-
-    def abstractify_string(self, mathstr):
-        return self.abstractify_tree(ast.parse(mathstr))
-
-    def arg_to_formula_map(self, name, args):
-        x = {
-            arg: '_{}#{}'.format(name, arg)
-                for arg in [
-                    arg['arg']['arg']
-                    for arg in args['arguments']['args']
-                ]
-        }
-        print('a2fm', x)
-        return x
-
-    def binop_lookup(self, binop):
-        if 'Mult' in binop: return '*'
-        if 'Div' in binop: return '/'
-        if 'Sub' in binop: return '-'
-        if 'Add' in binop: return '+'
-        return list(binop.keys())[0]
-
-    def unaryop_lookup(self, unaryop):
-        if 'USub' in unaryop: return '-'
-        return list(unaryop.keys())[0]
-
-    def ast_function_scaffolding(self, name, func):
-        func['name'] = name
-        return {
-            "Module": {
-                "body": [
-                    {
-                        "FunctionDef": func
-                    }
-                ]
-            }
-        }
-
-    def func_from_stmt(self, name, stmt):
-        """Turn assign(tgt, val) into def tgt(): return val so that tgt can
-          be forward-substituted.
-          """
-        fname = '{}.{}'.format(name, stmt['Assign']['targets'][0]['Name']['id'])
-        fval = stmt['Assign']['value']
-        func = self.ast_function_scaffolding(fname, fval)
-        func['Module']['body'][0]['FunctionDef']['args'] = {}
-        func['Module']['body'][0]['FunctionDef']['args']['arguments'] = {}
-        func['Module']['body'][0]['FunctionDef']['args']['arguments']['args'] = []
-        return func
-
-    def objast_expr(self, name, objast, args, functions):
-        if 'body' in objast:
-            return self.objast_expr(name, objast['body'][0], args, functions)
-        if 'Return' in objast:
-            return self.objast_expr(name, objast['Return']['value'], args, functions)
-        if 'Assign' in objast:
-            stmt_func = self.func_from_stmt(name, objast)
-            gen_name = stmt_func['Module']['body'][0]['FunctionDef']['name']
-            self.translate_objast(stmt_func)
-            functions.update({gen_name: stmt_func['Module']['body'][0]['FunctionDef']})
-            return '[_{}]'.format(gen_name)
-        if 'Call' in objast:
-            if objast['Call']['func']['Name']['id'] in functions:
-                copy_func = copy.deepcopy(functions[objast['Call']['func']['Name']['id']])
-                # self.translate_objast adds this to functions
-                self.translate_objast(
-                    self.ast_function_scaffolding(
-                        '{}:{}'.format(copy_func['name'], name),
-                        copy_func
-                    )
-                )
-                # ast_function_scaffolding adds the colon
-                return '[_{}]'.format(copy_func['name'])
-            else:
-                return '{}({})'.format(
-                    objast['Call']['func']['Name']['id'],
-                    ', '.join(
-                            [
-                                self.objast_expr(name, arg, args, functions)
-                                    for arg in objast['Call']['args']
-                            ]
-                    )
-                )
-        if 'BinOp' in objast:
-            return '({} {} {})'.format(
-                self.objast_expr(name, objast['BinOp']['left'], args, functions),
-                self.binop_lookup(objast['BinOp']['op']),
-                self.objast_expr(name, objast['BinOp']['right'], args, functions)
-            )
-
-        if 'UnaryOp' in objast:
-            return '({} {})'.format(
-                self.unaryop_lookup(objast['UnaryOp']['op']),
-                self.objast_expr(name, objast['UnaryOp']['operand'], args, functions)
-            )
-
-        if 'Num' in objast:
-            return objast['Num']['n']
-
-        if 'Name' in objast:
-            if objast['Name']['id'] in args:
-                return '[{}]'.format(args[objast['Name']['id']])
-            else:
-                return objast['Name']['id']
-
-        return 'ERRR ' + ','.join(objast.keys())
-
-    def dict_update_pipe(self, a, b):
-        """Update and return a dictionary."""
-        a.update(b)
-        return a
-
-    def translate_objast(self, objast):
-        """Run through objast determining new formulae, updating self.formulae"""
-        result_trees = {} # f1 -> abstractified FunctionDef
-        for body_elt in objast['Module']['body']:
-            print("translating", body_elt)
-            print("args", self.args)
-            func = body_elt['FunctionDef']
-            name = func['name']
-            formula_name = '_{}'.format(name)
-            new_args = self.arg_to_formula_map(name, func['args'])
-            self.formulae.update(
-                {
-                    formula_name: self.objast_expr(name, func, self.args, result_trees),
-                }
-            )
-
-            self.formulae.update(
-                {
-                    new_args[arg]: arg for arg in new_args
-                }
-            )
-            self.args.update(new_args)
-            print(new_args, self.args)
-            result_trees.update({name: func})
-        return self.formulae
-
-    def mathparse_string(self, mathstr):
-        """wrapper to parse Python code in a string"""
-        return self.translate_objast(self.abstractify_string(mathstr))
-
-    def mathparse_file(self, fname):
-        """wrapper to parse Python code in a file"""
-        with open(fname, 'r') as fin:
-            return self.mathparse_string(fin.read())
-
-def main(arg):
-    """when run from the command line, parse the file"""
-    mathparse = MathParse()
-    print(mathparse.mathparse_file(arg))
-
-if __name__ == '__main__':
-    main(sys.argv[1])
 
