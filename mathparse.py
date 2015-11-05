@@ -167,10 +167,22 @@ class StaticMathParse:
                 return i
         return -1
 
-    @staticmethod
-    def context_substitute(stmt, ctx):
+    @classmethod
+    def context_substitute(cls, statement, context):
         """Return a copy of the statement with the context substituted in."""
 
+        class SubstituteExpressions(ast.NodeTransformer):
+            """Replacing visitor."""
+
+            def visit_Name(self, node):
+                """Lookup this name in the context and substitute if possible."""
+                location = cls.find_substitution_context(node.id, context)
+                if location >= 0:
+                    return context[location].statement.value
+                else:
+                    return node
+
+        return SubstituteExpressions().visit(statement)
 
 class MathParse:
     """MathParse turns Python functions into Tableau calculations.

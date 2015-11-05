@@ -81,22 +81,21 @@ class TestMathParse(unittest.TestCase):
         # stmt 2
         self.assertEqual(mathparse.StaticMathParse.find_substitution_context('y', ctx[0:2]), 1)
 
-    @unittest.skip("need an intermediate method for identifying the substituting context")
     def test_generate_context_substituted_expression(self):
         myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)')
         stmts = list(mathparse.StaticMathParse.unwrap_module_statements(myast))
 
         ctx = [mathparse.StaticMathParse.update_context(stmt) for stmt in stmts]
-        stmt1 = mathparse.StaticMathParse.context_substitute(stmts[1], ctx[0])
+        stmt1 = mathparse.StaticMathParse.context_substitute(stmts[1], ctx[0:1])
         self.assertEqual(
             mathparse.StaticMathParse.render_expression(stmt1.value),
             '((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])'
         )
 
-        stmt2 = mathparse.StaticMathParse.context_substitute(stmts[2], ctx[1])
+        stmt2 = mathparse.StaticMathParse.context_substitute(stmts[2], ctx[0:2])
         self.assertEqual(
             mathparse.StaticMathParse.render_expression(stmt2.value),
-            'some_goofy_tuple_thing((99 * [_b]), [_y], [_z])'
+            'some_goofy_tuple_thing((99 * [_b]), ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz]), [_z])'
         )
 
 if __name__ == '__main__':
