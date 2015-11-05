@@ -66,7 +66,7 @@ class TestMathParse(unittest.TestCase):
         )
 
     def test_identify_substituting_context(self):
-        myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)')
+        myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)\nx = 33 + y\ny = 7 / x')
         stmts = list(mathparse.StaticMathParse.unwrap_module_statements(myast))
         ctx = [mathparse.StaticMathParse.update_context(stmt) for stmt in stmts]
 
@@ -81,11 +81,24 @@ class TestMathParse(unittest.TestCase):
         # stmt 2
         self.assertEqual(mathparse.StaticMathParse.find_substitution_context('y', ctx[0:2]), 1)
 
+        # stmt 3
+        self.assertEqual(mathparse.StaticMathParse.find_substitution_context('y', ctx[0:3]), 1)
+
+        # stmt 4
+        self.assertEqual(mathparse.StaticMathParse.find_substitution_context('x', ctx[0:4]), 3)
+
+        myast = ast.parse('x = 55\nx = 99 * x')
+        stmts = list(mathparse.StaticMathParse.unwrap_module_statements(myast))
+        ctx = [mathparse.StaticMathParse.update_context(stmt) for stmt in stmts]
+        # avoid some circular symbol lookups
+        self.assertEqual(mathparse.StaticMathParse.find_substitution_context('x', ctx[0:0]), -1)
+        self.assertEqual(mathparse.StaticMathParse.find_substitution_context('x', ctx[0:1]), 0)
+
     def test_generate_context_substituted_expression(self):
         myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)')
         stmts = list(mathparse.StaticMathParse.unwrap_module_statements(myast))
-
         ctx = [mathparse.StaticMathParse.update_context(stmt) for stmt in stmts]
+
         stmt1 = mathparse.StaticMathParse.context_substitute(stmts[1], ctx[0:1])
         self.assertEqual(
             mathparse.StaticMathParse.render_expression(stmt1.value),
@@ -96,6 +109,41 @@ class TestMathParse(unittest.TestCase):
         self.assertEqual(
             mathparse.StaticMathParse.render_expression(stmt2.value),
             'some_goofy_tuple_thing((99 * [_b]), ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz]), [_z])'
+        )
+
+    def test_redefining_a_symbol(self):
+        myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)\nx = 33 + y\ny = 7 / x')
+        stmts = list(mathparse.StaticMathParse.unwrap_module_statements(myast))
+
+        ctx = []
+        ctx.append(mathparse.StaticMathParse.update_context(stmts[0]))
+        ctx.append(mathparse.StaticMathParse.update_context(stmts[1]))
+        stmts[1] = mathparse.StaticMathParse.context_substitute(stmts[1], ctx[0:1])
+        ctx.append(mathparse.StaticMathParse.update_context(stmts[2]))
+        stmts[2] = mathparse.StaticMathParse.context_substitute(stmts[2], ctx[0:2])
+        ctx.append(mathparse.StaticMathParse.update_context(stmts[3]))
+        stmts[3] = mathparse.StaticMathParse.context_substitute(stmts[3], ctx[0:3])
+        ctx.append(mathparse.StaticMathParse.update_context(stmts[4]))
+        stmts[4] = mathparse.StaticMathParse.context_substitute(stmts[4], ctx[0:4])
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[1].value),
+            '((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[2].value),
+            'some_goofy_tuple_thing((99 * [_b]), ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz]), [_z])'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[3].value),
+            '(33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz]))'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[4].value),
+            '(7 / (33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])))'
         )
 
 if __name__ == '__main__':
