@@ -52,7 +52,7 @@ class YieldingVisitor:
         else:
             try:
                 iterator = iter(node)
-            except TypeError as te:
+            except TypeError:
                 pass
             else:
                 for item in iterator:
@@ -70,6 +70,53 @@ class SymbolFinderVisitor(YieldingVisitor):
     def visit_call(cls, node):
         """Skip function names but look at argument lists."""
         yield cls.visit(node.args)
+
+class TranslatorVisitor(YieldingVisitor):
+    """Convert an AST into a Tableau string."""
+
+    @classmethod
+    def return_string(cls, generator):
+        """Join together generated strings."""
+        strings = cls.evaluate_generated_values(generator)
+        return ''.join(strings)
+
+    @staticmethod
+    def visit_name(node):
+        """Translate a name node."""
+        yield '[_{}]'.format(node.id)
+
+    @staticmethod
+    def visit_num(node):
+        """Translate a number node."""
+        yield str(node.n)
+
+    @staticmethod
+    def binop_token(operator):
+        """Lookup the operator's token."""
+        return {
+            'Add': '+',
+            'Sub': '-',
+            'Mult': '*',
+            'Div': '/',
+            'Mod': '%',
+        }[operator.__class__.__name__]
+
+    @classmethod
+    def visit_binop(cls, node):
+        """Render a binop node."""
+        yield '({} {} {})'.format(
+            cls.return_string(cls.visit(node.left)),
+            cls.binop_token(node.op),
+            cls.return_string(cls.visit(node.right))
+        )
+
+    @classmethod
+    def visit_call(cls, node):
+        """Render a call."""
+        yield '{}({})'.format(
+            node.func.id,
+            ', '.join([cls.return_string(cls.visit(arg)) for arg in node.args])
+        )
 
 class StaticMathParse:
     """StaticMathParse holds testable stateless functions used in a MathParse context."""
@@ -91,6 +138,39 @@ class StaticMathParse:
         """Given an ast.Statement, return symbols from the left-hand side."""
         symbol_finder = SymbolFinderVisitor()
         return symbol_finder.find_symbols(stmt.targets[0])
+
+    @classmethod
+    def update_context(cls, stmt):
+        """Fill out the context based on a statement."""
+
+        class Context:
+            """Contains the state associated with a statement's context."""
+
+            def __init__(self, stmt, cls):
+                self.free_variables = cls.find_rhs_symbols(stmt)
+                self.bound_variables = cls.find_lhs_symbols(stmt)
+                self.statement = stmt
+
+        return Context(stmt, cls)
+
+    @staticmethod
+    def render_expression(expr):
+        """Convert an expression AST into a Tableau expression string."""
+        translator_visitor = TranslatorVisitor()
+        return translator_visitor.return_string(translator_visitor.visit(expr))
+
+    @staticmethod
+    def find_substitution_context(symbol, context):
+        """Figure out what context the symbol was defined in. -1 is not found."""
+        for i, ctx in reversed(list(enumerate(context))):
+            if symbol in ctx.bound_variables:
+                return i
+        return -1
+
+    @staticmethod
+    def context_substitute(stmt, ctx):
+        """Return a copy of the statement with the context substituted in."""
+
 
 class MathParse:
     """MathParse turns Python functions into Tableau calculations.
