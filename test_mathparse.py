@@ -146,6 +146,37 @@ class TestMathParse(unittest.TestCase):
             '(7 / (33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])))'
         )
 
+    def test_redefine_symbols_with_help(self):
+        myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)\nx = 33 + y\ny = 7 / x')
+
+        stmts = list(
+            mathparse.StaticMathParse.substitution_wrapper(
+                mathparse.StaticMathParse.unwrap_module_statements(myast)
+            )
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[1].value),
+            '((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[2].value),
+            'some_goofy_tuple_thing((99 * [_b]), ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz]), [_z])'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[3].value),
+            '(33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz]))'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[4].value),
+            '(7 / (33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])))'
+        )
+
+        
+
 if __name__ == '__main__':
     unittest.main()
 

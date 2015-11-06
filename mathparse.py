@@ -184,6 +184,16 @@ class StaticMathParse:
 
         return SubstituteExpressions().visit(statement)
 
+    @classmethod
+    def substitution_wrapper(cls, stmts):
+        """Perform all possible forward-substitutions on this statement sequence."""
+        stmt0 = next(stmts)
+        ctx = [cls.update_context(stmt0)]
+        yield stmt0
+        for i, stmt in enumerate(stmts):
+            ctx.append(cls.update_context(stmt))
+            yield cls.context_substitute(stmt, ctx[0:i+1])
+
 class MathParse:
     """MathParse turns Python functions into Tableau calculations.
 
