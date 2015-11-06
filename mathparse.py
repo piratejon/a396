@@ -189,9 +189,9 @@ class StaticMathParse:
         """Perform all possible forward-substitutions on this statement sequence."""
         ctx = [cls.update_context(next(stmts))]
         yield ctx[0].statement
-        for i, stmt in enumerate(stmts):
+        for stmt in stmts:
             ctx.append(cls.update_context(stmt))
-            yield cls.context_substitute(stmt, ctx[0:i+1])
+            yield cls.context_substitute(stmt, ctx)
 
 class MathParse:
     """MathParse turns Python functions into Tableau calculations.
