@@ -175,6 +175,11 @@ class TestMathParse(unittest.TestCase):
             '(7 / (33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])))'
         )
 
+    def test_redefine_list_elements(self):
+        myast = ast.parse("a = [5, 7, 9, 11]\nx = 22\na[1] = x + 5")
+        stmts = mathparse.StaticMathParse.unwrap_module_statement(myast)
+
+    @unittest.skip("first ensure we can assign to list elements")
     def test_handle_lists(self):
         stmts = list(
             mathparse.StaticMathParse.substitution_wrapper(
