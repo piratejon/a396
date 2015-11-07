@@ -147,11 +147,11 @@ class TestMathParse(unittest.TestCase):
         )
 
     def test_redefine_symbols_with_help(self):
-        myast = ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)\nx = 33 + y\ny = 7 / x')
-
         stmts = list(
             mathparse.StaticMathParse.substitution_wrapper(
-                mathparse.StaticMathParse.unwrap_module_statements(myast)
+                mathparse.StaticMathParse.unwrap_module_statements(
+                    ast.parse('x = 99 * b\ny = x + 17 * dag + yo / ribbit + frobnitz\na,b,c=some_goofy_tuple_thing(x, y, z)\nx = 33 + y\ny = 7 / x')
+                )
             )
         )
 
@@ -175,7 +175,39 @@ class TestMathParse(unittest.TestCase):
             '(7 / (33 + ((((99 * [_b]) + (17 * [_dag])) + ([_yo] / [_ribbit])) + [_frobnitz])))'
         )
 
-        
+    def test_handle_lists(self):
+        stmts = list(
+            mathparse.StaticMathParse.substitution_wrapper(
+                mathparse.StaticMathParse.unwrap_module_statements(
+                    ast.parse("""
+a = [5, 7, x, 11]
+b = a[0] * 19 / a[2]
+a[1] = b - 7
+x = 9 ** (a[1] / a[3])
+                      """)
+                )
+            )
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[0].value),
+            '[5, 7, [_x], 11]'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[1].value),
+            '((5 * 19) / [_x])'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[2].value),
+            '(((5 * 19) / [_x]) - 7)'
+        )
+
+        self.assertEqual(
+            mathparse.StaticMathParse.render_expression(stmts[3].value),
+            '(9 ** ((((5 * 19) / [_x]) - 7) / 11))'
+        )
 
 if __name__ == '__main__':
     unittest.main()

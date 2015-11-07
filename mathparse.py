@@ -99,6 +99,7 @@ class TranslatorVisitor(YieldingVisitor):
             'Mult': '*',
             'Div': '/',
             'Mod': '%',
+            'Pow': '**',
         }[operator.__class__.__name__]
 
     @classmethod
@@ -117,6 +118,21 @@ class TranslatorVisitor(YieldingVisitor):
             node.func.id,
             ', '.join([cls.return_string(cls.visit(arg)) for arg in node.args])
         )
+
+    @classmethod
+    def visit_list(cls, node):
+        """Render a list."""
+        yield '[{}]'.format(
+            ', '.join([cls.return_string(cls.visit(elt)) for elt in node.elts])
+        )
+
+    @classmethod
+    def visit_subscript(cls, node):
+        """Render a subscript."""
+        if isinstance(node.value, ast.List):
+            yield cls.visit(node.value.elts[node.slice.value.n])
+        else:
+            raise ValueError("don't know how to subscript {}".format(node.value.__class__.__name__))
 
 class StaticMathParse:
     """StaticMathParse holds testable stateless functions used in a MathParse context."""
