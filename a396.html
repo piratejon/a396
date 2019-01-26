@@ -18,7 +18,7 @@
         <li>erf
         <li>... and many more!
       </ul>
-      This is a 100% client-side and can be embedded in offline workbooks!
+      This is 100% client-side and can be embedded in offline workbooks!
       </p>
       <span class='traytoggle'>x</span>
     </div>
@@ -31,6 +31,7 @@
       </div>
       <div id='middle'>
         <h2>Variables</h2>
+        <span id='extracted'></span>
         <p>Unbound -- these are your inputs</p>
         <ul id='unbound_list'>
         </ul>
@@ -49,6 +50,12 @@
       var editor = ace.edit('editor');
       var JavaScriptMode = ace.require('ace/mode/javascript').Mode;
       editor.session.setMode(new JavaScriptMode());
+      editor.on('change', function (e) {
+        var v = editor.getValue();
+        document.getElementById('extracted').innerText = v;
+        console.log(v);
+      });
+      editor.setValue("function my_calc(a, b) {\n    a += 5;\n    b *= 9;\n    return (a - b) / 37.2;\n}");
     </script>
   </body>
 </html>
