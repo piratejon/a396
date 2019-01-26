@@ -286,6 +286,56 @@ return x + 5
             }
         )
 
+    def test_rearrange_statements(self):
+        mathparse = ctxmathparse.ASTMathParse('t')
+        mathparse.parse_string('x = 99 * b\ny = 150 + x')
+        mathparse.statements[1] = mathparse.visit_substitute(
+            mathparse.statements[0], # substitute this
+            mathparse.statements[1]  # into this
+        )
+        self.assertEqual(mathparse.translate_statements(), {
+                '_t:x': '(99 * [_t:b])',
+                '_t:y': '(150 + (99 * [_t:b]))'
+            }
+        )
+
+#    def test_version_symbol(self):
+#        mathparse = ctxmathparse.ASTMathParse('t')
+#        mathparse.update_symbol('x')
+#        print(mathparse.symbols)
+#        self.assertEqual(mathparse.symbols, {
+#                'x': '_t:x'
+#            }
+#        )
+#        mathparse.update_symbol('y')
+#        self.assertEqual(mathparse.symbols, {'x': '_t:x', 'y': '_t:y'})
+#        mathparse.update_symbol('x')
+#        self.assertEqual(mathparse.symbols, {
+#                'x': '_t:x.1',
+#                'y': '_t:y'
+#            }
+#        )
+#        mathparse.update_symbol('y')
+#        mathparse.update_symbol('y')
+#        self.assertEqual(mathparse.symbols, {
+#                'x': '_t:x.1',
+#                'y': '_t:y.2'
+#            }
+#        )
+
+#    def test_overwrite_symbol_definition(self):
+#        mathparse = ctxmathparse.ASTMathParse('t')
+#        mathparse.parse_string('x = 99 * y + b\ny = 99 + b\nx = y * 5')
+#        self.assertEqual(mathparse.translate_statements(), {
+#                '_t:stmt0': '((99 * [_t:y]) + [_t:b])',
+#                '_t:x': '[_t:stmt0]',
+#                '_t:stmt1': '(99 + [_t:b])',
+#                '_t:y.1': '[_t:stmt1]',
+#                '_t:stmt2': '([_t:y.1] * 5)',
+#                '_t:x.1': '[_t:stmt2]'
+#            }
+#        )
+
     def test_translate_another_assignment_statement(self):
         mathparse = ctxmathparse.ASTMathParse('t')
         mathparse.parse_string('x = 99 * b\ny = x * 38 + 15')

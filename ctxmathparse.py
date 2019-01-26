@@ -333,7 +333,14 @@ class TargetSymbolSeekerVisitor(ast.NodeVisitor):
             except AttributeError:
                 pass
 
-class RenderVisitor():
+class SubstituteVisitor(ast.NodeTransformer):
+    """Replace symbol references with expression values."""
+    def __init__(self, symbol, value):
+        self.symbol = symbol
+        self.value = value
+        self.left = False
+
+class RenderVisitor(ast.NodeVisitor):
     """Run through the tree, returning a string formula."""
 
     def __init__(self, symbol_defs, context_name='_'):
@@ -465,6 +472,35 @@ class ASTMathParse:
                 )
 
         return stmts
+
+    def visit_substitute(self, stmt_src, stmt_dst):
+        """
+            This substitutes the result of an expression into another statement. For example:
+              x = 99 * b
+              y = 150 + x
+            this yields:
+              y = 150 + (99 * b)
+        """
+        vs = SubstituteVisitor(stmt_src.targets[0].id, stmt_src.value)
+        return vs.substitute_into(stmt_dst)
+
+    def versioned_symbol(self, symbol):
+        try:
+            if self.symbol_table[symbol] == 0:
+                return '{}.{}'.format(symbol, self.symbol_table[symbol])
+            else:
+                return symbol
+        except KeyError:
+            return symbol
+
+    def update_symbol(self, symbol):
+        try:
+            self.symbol_table[symbol] += 1
+        except KeyError:
+            self.symbol_table[symbol] = 0
+
+        new_thing = {symbol: self.versioned_symbol(symbol)}
+        self.symbols.update(new_thing)
 
     def find_bound_variables(self, myast, ctx={}):
         """Identify the free variables in an assignment RHS."""
