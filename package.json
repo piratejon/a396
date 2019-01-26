@@ -1,0 +1,18 @@
+{
+  "name": "a396",
+  "version": "0.0.0",
+  "description": "Translate a subset of Javascript into Tableau expressions.",
+  "keywords": [
+    "javascript",
+    "Tableau",
+    "algorithms",
+    "numerical methods",
+    "statistics",
+    "translation"
+  ],
+  "homepage": "https://github.com/piratejon/a396",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  }
+}
