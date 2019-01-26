@@ -1,0 +1,22 @@
+#top_drawer { border: 1px solid black; }
+#top_drawer > span.traytoggle {
+  margin: 0 auto;
+  display: block;
+  width: 4em;
+  border: 1px solid red;
+  text-align: center;
+}
+#top_drawer > span.traytoggle:hover { background-color: lightblue; }
+
+#workspace { display: flex; }
+
+#workspace > div {
+  border: 1px solid black;
+  height: 20em;
+}
+
+#editor {
+  position: relative;
+  width: 500px;
+  height: 400px;
+}

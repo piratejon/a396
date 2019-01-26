@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>A396 - Tableau Expression Builder</title>
+    <link rel="stylesheet" type="text/css" href="a396.css">
+  </head>
+  <body>
+    <h1>A396 - Tableau Expression Builder</h1>
+    <div id='top_drawer'>
+      <p>Translate JavaScript algorithms into Tableau expressions. Named after <a href="https://dl.acm.org/citation.cfm?id=355600">the first formula I needed this for</a>. Perfect for advanced calculations Tableau doesn't do natively:
+      <ul>
+        <li>t-test
+        <li>chi-squared test
+        <li>factorial
+        <li>double factorial
+        <li>normsinv
+        <li>erf
+        <li>... and many more!
+      </ul>
+      This is a 100% client-side and can be embedded in offline workbooks!
+      </p>
+      <span class='traytoggle'>x</span>
+    </div>
+    <div id='workspace'>
+      <div id='left'>
+        <h2>JavaScript algorithm</h2>
+        <p>
+        <div id='editor'>
+        </div>
+      </div>
+      <div id='middle'>
+        <h2>Variables</h2>
+        <p>Unbound -- these are your inputs</p>
+        <ul id='unbound_list'>
+        </ul>
+        <p>Bound -- intermediate calculations or outputs</p>
+        <ul id='bound_list'>
+        </ul>
+      </div>
+      <div id='right'>
+        <h2>Tableau expression</h2>
+        <label>Minimize expressions <input type='checkbox' id='chk_minimize_expressions'></label>
+      </div>
+    </div>
+    <script src='ace-builds/src-min-noconflict/ace.js' type='text/javascript' charset='utf-8'></script>
+    <script src='ace-builds/src-min-noconflict/mode-javascript.js' type='text/javascript' charset='utf-8'></script>
+    <script type='text/javascript'>
+      var editor = ace.edit('editor');
+      var JavaScriptMode = ace.require('ace/mode/javascript').Mode;
+      editor.session.setMode(new JavaScriptMode());
+    </script>
+  </body>
+</html>
